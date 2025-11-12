@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 using VideoCall.Application.Interfaces;
+using VideoCall.Domain.Entities;
 using VideoCall.Web.Application.Services;
 
 namespace VideoCall.Web.Controllers
@@ -19,11 +20,5 @@ namespace VideoCall.Web.Controllers
             var token = Convert.ToBase64String(Encoding.UTF8.GetBytes(user.Id));
             return Ok(new { token, name = user.Name });
         }
-    }
-
-    public class LoginModel
-    {
-        public string Name { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
     }
 }
