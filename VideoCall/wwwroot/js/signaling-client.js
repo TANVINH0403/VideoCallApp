@@ -9,7 +9,7 @@ const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
 const hangupBtn = document.getElementById("hangupBtn");
 const friendList = document.getElementById("friendList");
-const status = document.getElementById("status");
+const statusEL = document.getElementById("status"); // Biến trạng thái đúng
 
 // Cấu hình STUN (dùng Google miễn phí)
 const iceServers = {
@@ -24,6 +24,7 @@ async function startSignalR() {
     const token = localStorage.getItem("authToken");
     if (!token) return;
 
+    // ... (Phần code SignalR builder không đổi)
     connection = new signalR.HubConnectionBuilder()
         .withUrl(`/hubs?token=${token}`)
         .withAutomaticReconnect()
@@ -34,7 +35,7 @@ async function startSignalR() {
         renderFriends(friends);
     });
 
-    // Nhận cuộc gọi đến
+    // ... (Các hàm connection.on khác không đổi)
     connection.on("IncomingCall", (callerConnectionId) => {
         if (confirm("Có cuộc gọi từ bạn bè. Nhận không?")) {
             currentCallId = callerConnectionId;
@@ -42,10 +43,8 @@ async function startSignalR() {
         }
     });
 
-    // Nhận tín hiệu WebRTC
     connection.on("ReceiveSignal", async (signal, fromConnectionId) => {
         if (!peerConnection) return;
-
         const desc = JSON.parse(signal);
         if (desc.type === "offer") {
             await peerConnection.setRemoteDescription(new RTCSessionDescription(desc));
@@ -58,20 +57,20 @@ async function startSignalR() {
             await peerConnection.addIceCandidate(new RTCIceCandidate(desc.candidate));
         }
     });
-    
+
     // Bắt đầu kết nối
     try {
         await connection.start();
-        statusEl.textContent = "Đã kết nối!"; // ĐÃ SỬA
-        statusEl.className = "status";
+        statusEL.textContent = "Đã kết nối!";
+        statusEL.className = "status";
     } catch (err) {
-        statusEl.textContent = "Lỗi kết nối SignalR!";
-        statusEl.className = "status offline";
+        statusEL.textContent = "Lỗi kết nối SignalR!";
+        statusEL.className = "status offline";
         console.error(err);
     }
 }
 
-// === RENDER DANH SÁCH BẠN ===
+// === RENDER DANH SÁCH BẠN (ĐÃ SỬA LỖI BẢO MẬT/CÚ PHÁP) ===
 function renderFriends(friends) {
     friendList.innerHTML = "";
     if (friends.length === 0) {
@@ -81,40 +80,50 @@ function renderFriends(friends) {
 
     friends.forEach(f => {
         const li = document.createElement("li");
-        li.innerHTML = `
-      <span><strong>${f.name}</strong></span>
-      <button onclick="addFriend('${f.id}')">Kết bạn</button>
-      <button onclick="callUser('${f.connectionId}')">Gọi</button>
-    `;
+
+        // Dùng textContent để hiển thị tên an toàn
+        const nameSpan = document.createElement("span");
+        nameSpan.innerHTML = `<strong>${f.name}</strong>`;
+
+        // Tạo nút Kết bạn và gán sự kiện an toàn
+        const btnAdd = document.createElement("button");
+        btnAdd.textContent = "Kết bạn";
+        btnAdd.addEventListener('click', () => addFriend(f.id));
+
+        // Tạo nút Gọi và gán sự kiện an toàn
+        const btnCall = document.createElement("button");
+        btnCall.textContent = "Gọi";
+        btnCall.addEventListener('click', () => callUser(f.connectionId));
+
+        li.appendChild(nameSpan);
+        li.appendChild(btnAdd);
+        li.appendChild(btnCall);
+
         friendList.appendChild(li);
     });
 }
 
 
-// === GỌI NGƯỜI DÙNG ===
+// ... (Các hàm khác như callUser, startCall, hangUp, getLocalStream, addFriend không thay đổi)
 async function callUser(targetConnectionId) {
     currentCallId = targetConnectionId;
     await startCall(targetConnectionId, true);
 }
 
-// === BẮT ĐẦU CUỘC GỌI ===
 async function startCall(targetConnectionId, isCaller) {
     await getLocalStream();
 
     peerConnection = new RTCPeerConnection(iceServers);
 
-    // Thêm track local
     localStream.getTracks().forEach(track => {
         peerConnection.addTrack(track, localStream);
     });
 
-    // Nhận track remote
     peerConnection.ontrack = (event) => {
         remoteStream = event.streams[0];
         remoteVideo.srcObject = remoteStream;
     };
 
-    // Gửi ICE candidate
     peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
             connection.invoke("SendSignal", JSON.stringify({ candidate: event.candidate }), targetConnectionId);
@@ -131,7 +140,6 @@ async function startCall(targetConnectionId, isCaller) {
     hangupBtn.onclick = hangUp;
 }
 
-// === NGẮT CUỘC GỌI ===
 function hangUp() {
     if (peerConnection) {
         peerConnection.close();
@@ -142,7 +150,6 @@ function hangUp() {
     currentCallId = null;
 }
 
-// === LẤY CAMERA + MIC ===
 async function getLocalStream() {
     if (localStream) return;
     try {
@@ -153,7 +160,6 @@ async function getLocalStream() {
     }
 }
 
-// === GỬI KẾT BẠN ===
 async function addFriend(friendId) {
     try {
         await connection.invoke("AddFriend", friendId);
@@ -167,4 +173,5 @@ async function addFriend(friendId) {
 document.addEventListener("DOMContentLoaded", () => {
     startSignalR();
     hangupBtn.disabled = true;
+    getLocalStream();
 });
