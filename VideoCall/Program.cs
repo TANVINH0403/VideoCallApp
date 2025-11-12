@@ -9,13 +9,13 @@ using VideoCall.Web.Domain.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// === DI – SOLID ===
+// === DI ï¿½ SOLID ===
 builder.Services.AddSingleton<IRepository<User>>(sp =>
 {
     var users = new List<User>
     {
         new("Nam", BCrypt.Net.BCrypt.HashPassword("123")),
-        new("Hùng", BCrypt.Net.BCrypt.HashPassword("123")),
+        new("Hï¿½ng", BCrypt.Net.BCrypt.HashPassword("123")),
         new("Lan", BCrypt.Net.BCrypt.HashPassword("123")),
         new("Minh", BCrypt.Net.BCrypt.HashPassword("123"))
     };
