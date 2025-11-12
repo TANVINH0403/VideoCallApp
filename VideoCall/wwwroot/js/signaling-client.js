@@ -31,12 +31,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     connection.on("ReceiveAnswer", sdp => {
         if (pc) pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp }));
     });
-    connection.on("ReceiveIce", candidate => {
-        if (pc) pc.addIceCandidate(new RTCIceCandidate(candidate));
-    });
-    connection.on("ReceiveFriendRequest", (id, name) => {
-        if (confirm(`${name} muốn kết bạn`)) connection.invoke("AcceptFriendRequest", id);
-    });
 
     await connection.start();
 });
