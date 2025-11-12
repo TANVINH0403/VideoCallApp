@@ -1,4 +1,3 @@
-// Program.cs
 using VideoCall.Application.Interfaces;
 using VideoCall.Application.Services;
 using VideoCall.Domain.Entities;
@@ -10,8 +9,6 @@ using VideoCall.Web.Domain.Entities;
 var builder = WebApplication.CreateBuilder(args);
 
 // === DI – SOLID ===
-
-// Các Repository (Singleton - Dùng chung)
 builder.Services.AddSingleton<IRepository<User>>(sp =>
 {
     var users = new List<User>
@@ -27,9 +24,8 @@ builder.Services.AddSingleton<IRepository<User>>(sp =>
 builder.Services.AddSingleton<IRepository<Friendship>>(sp =>
     new InMemoryRepository<Friendship>(new List<Friendship>()));
 
-// SỬA LỖI Ở ĐÂY: UserService phải là Singleton để chia sẻ danh sách online
+// SỬA LỖI Ở ĐÂY: UserService phải là Singleton
 builder.Services.AddSingleton<IUserService, UserService>();
-// FriendshipService có thể là Scoped (dùng riêng) vì nó không giữ trạng thái online
 builder.Services.AddScoped<IFriendshipService, FriendshipService>();
 
 builder.Services.AddSignalR();
