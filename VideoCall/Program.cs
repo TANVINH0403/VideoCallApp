@@ -41,9 +41,16 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseDefaultFiles(new DefaultFilesOptions
+{
+    DefaultFileNames = new List<string> { "login.html" }
+});
+
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowAll");
+
+
 
 app.MapControllers();
 app.MapHub<VideoCallHub>("/hubs");
