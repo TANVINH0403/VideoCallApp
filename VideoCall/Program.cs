@@ -9,7 +9,7 @@ using VideoCall.Web.Domain.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// === DI � SOLID ===
+
 builder.Services.AddSingleton<IRepository<User>>(sp =>
 {
     var users = new List<User>
