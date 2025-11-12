@@ -90,6 +90,7 @@ function renderFriends(friends) {
     });
 }
 
+
 // === GỌI NGƯỜI DÙNG ===
 async function callUser(targetConnectionId) {
     currentCallId = targetConnectionId;
