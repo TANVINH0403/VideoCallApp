@@ -1,120 +1,169 @@
-﻿let connection, pc, localStream;
-const remoteVideo = document.getElementById("remoteVideo");
-const localVideo = document.getElementById("localVideo");
-const chat = document.getElementById("chat");
-const chatWith = document.getElementById("chatWith");
-const callBtn = document.getElementById("callBtn");
-const hangupBtn = document.getElementById("hangupBtn");
-let targetId = "";
+﻿// wwwroot/js/signaling-client.js
+let connection = null;
+let localStream = null;
+let remoteStream = null;
+let peerConnection = null;
+let currentCallId = null;
 
-document.addEventListener("DOMContentLoaded", async () => {
+const localVideo = document.getElementById("localVideo");
+const remoteVideo = document.getElementById("remoteVideo");
+const hangupBtn = document.getElementById("hangupBtn");
+const friendList = document.getElementById("friendList");
+const status = document.getElementById("status");
+
+// Cấu hình STUN (dùng Google miễn phí)
+const iceServers = {
+    iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" }
+    ]
+};
+
+// === KHỞI TẠO SIGNALR ===
+async function startSignalR() {
     const token = localStorage.getItem("authToken");
-    if (!token) { window.location.href = "/login.html"; return; }
+    if (!token) return;
 
     connection = new signalR.HubConnectionBuilder()
         .withUrl(`/hubs?token=${token}`)
+        .withAutomaticReconnect()
         .build();
 
-    connection.on("LoadFriends", friends => renderFriends(friends));
-    connection.on("FriendOnline", (id, name) => updateStatus(id, true));
-    connection.on("FriendOffline", id => updateStatus(id, false));
-    connection.on("IncomingCall", (id, name) => {
-        if (confirm(`${name} đang gọi...`)) {
-            connection.invoke("AcceptCall", id);
-        } else {
-            connection.invoke("RejectCall", id);
+    // Nhận danh sách bạn bè
+    connection.on("LoadFriends", (friends) => {
+        renderFriends(friends);
+    });
+
+    // Nhận cuộc gọi đến
+    connection.on("IncomingCall", (callerConnectionId) => {
+        if (confirm("Có cuộc gọi từ bạn bè. Nhận không?")) {
+            currentCallId = callerConnectionId;
+            startCall(callerConnectionId, false);
         }
     });
-    connection.on("CallAccepted", id => startCall(id, false));
-    connection.on("CallRejected", () => alert("Cuộc gọi bị từ chối"));
-    connection.on("ReceiveOffer", (id, sdp) => handleOffer(id, sdp));
-    connection.on("ReceiveAnswer", sdp => {
-        if (pc) pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp }));
+
+    // Nhận tín hiệu WebRTC
+    connection.on("ReceiveSignal", async (signal, fromConnectionId) => {
+        if (!peerConnection) return;
+
+        const desc = JSON.parse(signal);
+        if (desc.type === "offer") {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(desc));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            await connection.invoke("SendSignal", JSON.stringify(answer), fromConnectionId);
+        } else if (desc.type === "answer") {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(desc));
+        } else if (desc.candidate) {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(desc.candidate));
+        }
     });
+    
+    // Bắt đầu kết nối
+    try {
+        await connection.start();
+        statusEl.textContent = "Đã kết nối!"; // ĐÃ SỬA
+        statusEl.className = "status";
+    } catch (err) {
+        statusEl.textContent = "Lỗi kết nối SignalR!";
+        statusEl.className = "status offline";
+        console.error(err);
+    }
+}
 
-    await connection.start();
-});
-
+// === RENDER DANH SÁCH BẠN ===
 function renderFriends(friends) {
-    const list = document.getElementById("friendsList");
-    list.innerHTML = "";
+    friendList.innerHTML = "";
+    if (friends.length === 0) {
+        friendList.innerHTML = "<li>Không có bạn online</li>";
+        return;
+    }
+
     friends.forEach(f => {
-        const div = document.createElement("div");
-        div.className = `friend ${f.isOnline ? "online" : ""}`;
-        div.dataset.id = f.id;
-        div.innerHTML = `
-            <img src="https://i.pravatar.cc/40?u=${f.id}"/>
-            <div class="info">
-                <div>${f.name}</div>
-                <div class="status"></div>
-            </div>
-        `;
-        div.onclick = () => openChat(f.id, f.name);
-        list.appendChild(div);
+        const li = document.createElement("li");
+        li.innerHTML = `
+      <span><strong>${f.name}</strong></span>
+      <button onclick="addFriend('${f.id}')">Kết bạn</button>
+      <button onclick="callUser('${f.connectionId}')">Gọi</button>
+    `;
+        friendList.appendChild(li);
     });
 }
 
-function updateStatus(id, online) {
-    const el = document.querySelector(`.friend[data-id="${id}"]`);
-    if (el) el.classList.toggle("online", online);
+// === GỌI NGƯỜI DÙNG ===
+async function callUser(targetConnectionId) {
+    currentCallId = targetConnectionId;
+    await startCall(targetConnectionId, true);
 }
 
-function openChat(id, name) {
-    targetId = id;
-    chatWith.textContent = name;
-    chat.style.display = "flex";
-    document.getElementById("videoContainer").style.display = "none";
-    callBtn.style.display = "inline-block";
-    hangupBtn.style.display = "none";
-}
+// === BẮT ĐẦU CUỘC GỌI ===
+async function startCall(targetConnectionId, isCaller) {
+    await getLocalStream();
 
-callBtn.onclick = () => connection.invoke("CallFriend", targetId);
-hangupBtn.onclick = () => endCall();
+    peerConnection = new RTCPeerConnection(iceServers);
 
-async function startCall(id, isCaller) {
-    pc = new RTCPeerConnection({
-        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+    // Thêm track local
+    localStream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, localStream);
     });
 
-    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-    localVideo.srcObject = localStream;
+    // Nhận track remote
+    peerConnection.ontrack = (event) => {
+        remoteStream = event.streams[0];
+        remoteVideo.srcObject = remoteStream;
+    };
 
-    pc.ontrack = e => { remoteVideo.srcObject = e.streams[0]; };
-    pc.onicecandidate = e => {
-        if (e.candidate) {
-            connection.invoke("SendIce", id, e.candidate.toJSON());
+    // Gửi ICE candidate
+    peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+            connection.invoke("SendSignal", JSON.stringify({ candidate: event.candidate }), targetConnectionId);
         }
     };
 
     if (isCaller) {
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        connection.invoke("SendOffer", id, offer.sdp);
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        await connection.invoke("SendSignal", JSON.stringify(offer), targetConnectionId);
     }
 
-    document.getElementById("videoContainer").style.display = "block";
-    callBtn.style.display = "none";
-    hangupBtn.style.display = "inline-block";
+    hangupBtn.disabled = false;
+    hangupBtn.onclick = hangUp;
 }
 
-async function handleOffer(id, sdp) {
-    await startCall(id, false);
-    await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp }));
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-    connection.invoke("SendAnswer", id, answer.sdp);
-}
-
-function endCall() {
-    if (pc) { pc.close(); pc = null; }
-    if (localStream) {
-        localStream.getTracks().forEach(t => t.stop());
-        localStream = null;
+// === NGẮT CUỘC GỌI ===
+function hangUp() {
+    if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
     }
     remoteVideo.srcObject = null;
-    localVideo.srcObject = null;
-    document.getElementById("videoContainer").style.display = "none";
-    callBtn.style.display = "inline-block";
-    hangupBtn.style.display = "none";
+    hangupBtn.disabled = true;
+    currentCallId = null;
 }
+
+// === LẤY CAMERA + MIC ===
+async function getLocalStream() {
+    if (localStream) return;
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localVideo.srcObject = localStream;
+    } catch (err) {
+        alert("Không thể truy cập camera/mic: " + err.message);
+    }
+}
+
+// === GỬI KẾT BẠN ===
+async function addFriend(friendId) {
+    try {
+        await connection.invoke("AddFriend", friendId);
+        alert("Đã gửi lời mời kết bạn!");
+    } catch (err) {
+        alert("Lỗi gửi kết bạn!");
+    }
+}
+
+// === KHỞI ĐỘNG ===
+document.addEventListener("DOMContentLoaded", () => {
+    startSignalR();
+    hangupBtn.disabled = true;
+});

@@ -13,7 +13,7 @@ namespace VideoCall.Web.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
-            var user = await _userService.LoginAsync(model.Name, model.Password);
+            var user = await userService.LoginAsync(model.Name, model.Password);
             if (user == null) return Unauthorized("Sai tên hoặc mật khẩu");
 
             var token = Convert.ToBase64String(Encoding.UTF8.GetBytes(user.Id));
