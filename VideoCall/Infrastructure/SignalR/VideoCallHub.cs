@@ -27,9 +27,12 @@ namespace VideoCall.Infrastructure.SignalR
                 if (user == null) { Context.Abort(); return; }
 
                 await _userService.SetOnlineAsync(Context.ConnectionId, user);
+
                 var friends = await _userService.GetOnlineFriendsAsync(user.Id);
-                await Clients.Caller.SendAsync("LoadFriends", friends.Select(f => new { f.Id, f.Name, f.IsOnline }));
-                await Clients.Others.SendAsync("FriendOnline", Context.ConnectionId, user.Name);
+                await Clients.Caller.SendAsync("LoadFriends", friends.Select(f => new { f.Id, f.Name }));
+
+                // Sửa đổi ở đây: Gửi đối tượng User cho người khác
+                await Clients.Others.SendAsync("FriendOnline", new { user.Id, user.Name });
             }
             catch { Context.Abort(); }
 
@@ -38,16 +41,36 @@ namespace VideoCall.Infrastructure.SignalR
 
         public override async Task OnDisconnectedAsync(Exception? ex)
         {
-            await _userService.SetOfflineAsync(Context.ConnectionId);
-            await Clients.Others.SendAsync("FriendOffline", Context.ConnectionId);
+            // Sửa đổi ở đây: Lấy User và gửi UserID
+            var user = await _userService.SetOfflineAsync(Context.ConnectionId);
+            if (user != null)
+            {
+                await Clients.Others.SendAsync("FriendOffline", user.Id);
+            }
             await base.OnDisconnectedAsync(ex);
         }
 
-        public async Task CallFriend(string targetId)
+        public async Task CallFriend(string targetUserId)
         {
             var caller = _userService.GetByConnectionId(Context.ConnectionId);
-            if (caller != null && await _friendshipService.AreFriendsAsync(caller.Id, targetId))
-                await Clients.Client(targetId).SendAsync("IncomingCall", Context.ConnectionId, caller.Name);
+
+            // Tìm người dùng trong danh sách ONLINE, không phải GetAllUsers
+            var targetUser = _userService.GetOnlineUserById(targetUserId);
+
+            if (caller == null || targetUser == null)
+            {
+                // Một trong hai người không online hoặc không tồn tại
+                return;
+            }
+
+            // (có thể thêm kiểm tra tình bạn ở đây nếu muốn)
+            // if (await _friendshipService.AreFriendsAsync(caller.Id, targetUserId))
+            // {
+
+            // Gửi cuộc gọi đến ConnectionID của người nhận
+            await Clients.Client(targetUser.ConnectionId).SendAsync("IncomingCall", Context.ConnectionId, caller.Name);
+
+            // }
         }
 
         public async Task AcceptCall(string callerId) => await Clients.Client(callerId).SendAsync("CallAccepted", Context.ConnectionId);
@@ -59,6 +82,8 @@ namespace VideoCall.Infrastructure.SignalR
         {
             await Clients.Client(targetId).SendAsync("ReceiveIce", candidate);
         }
+
+        // (Các hàm bạn bè giữ nguyên)
         public async Task SendFriendRequest(string targetId)
         {
             var sender = _userService.GetByConnectionId(Context.ConnectionId);
@@ -83,7 +108,7 @@ namespace VideoCall.Infrastructure.SignalR
             if (user != null)
             {
                 var friends = await _userService.GetOnlineFriendsAsync(user.Id);
-                await Clients.Client(id).SendAsync("LoadFriends", friends.Select(f => new { f.Id, f.Name, f.IsOnline }));
+                await Clients.Client(id).SendAsync("LoadFriends", friends.Select(f => new { f.Id, f.Name }));
             }
         }
     }
