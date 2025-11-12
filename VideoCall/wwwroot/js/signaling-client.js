@@ -24,7 +24,6 @@ async function startSignalR() {
     const token = localStorage.getItem("authToken");
     if (!token) return;
 
-    // ... (Phần code SignalR builder không đổi)
     connection = new signalR.HubConnectionBuilder()
         .withUrl(`/hubs?token=${token}`)
         .withAutomaticReconnect()
