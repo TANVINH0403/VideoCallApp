@@ -3,15 +3,14 @@ let connection = null;
 let localStream = null;
 let remoteStream = null;
 let peerConnection = null;
-let currentCallId = null;
+let currentTargetConnectionId = null;
 
 const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
 const hangupBtn = document.getElementById("hangupBtn");
 const friendList = document.getElementById("friendList");
-const status = document.getElementById("status");
+const statusEL = document.getElementById("status");
 
-// Cấu hình STUN (dùng Google miễn phí)
 const iceServers = {
     iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
@@ -19,119 +18,146 @@ const iceServers = {
     ]
 };
 
-// === KHỞI TẠO SIGNALR ===
 async function startSignalR() {
     const token = localStorage.getItem("authToken");
-    if (!token) return;
+    if (!token) {
+        window.location.href = "/login.html";
+        return;
+    }
 
     connection = new signalR.HubConnectionBuilder()
         .withUrl(`/hubs?token=${token}`)
         .withAutomaticReconnect()
         .build();
 
-    // Nhận danh sách bạn bè
+    // === CÁC HÀM NHẬN TÍN HIỆU TỪ SERVER ===
     connection.on("LoadFriends", (friends) => {
         renderFriends(friends);
     });
 
-    // Nhận cuộc gọi đến
-    connection.on("IncomingCall", (callerConnectionId) => {
-        if (confirm("Có cuộc gọi từ bạn bè. Nhận không?")) {
-            currentCallId = callerConnectionId;
+    connection.on("FriendOnline", (user) => {
+        addFriendToList(user);
+    });
+
+    connection.on("FriendOffline", (userId) => {
+        removeFriendFromList(userId);
+    });
+
+    connection.on("IncomingCall", (callerConnectionId, callerName) => {
+        if (confirm(`${callerName} đang gọi. Bạn có muốn trả lời?`)) {
+            currentTargetConnectionId = callerConnectionId;
+            connection.invoke("AcceptCall", callerConnectionId);
             startCall(callerConnectionId, false);
+        } else {
+            connection.invoke("RejectCall", callerConnectionId);
+        }
+    });
+    connection.on("CallAccepted", (receiverConnectionId) => {
+        currentTargetConnectionId = receiverConnectionId;
+        startCall(receiverConnectionId, true);
+    });
+    connection.on("CallRejected", () => {
+        alert("Cuộc gọi bị từ chối.");
+        currentTargetConnectionId = null;
+    });
+    connection.on("ReceiveOffer", async (fromConnectionId, sdp) => {
+        currentTargetConnectionId = fromConnectionId;
+        await startCall(fromConnectionId, false);
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(sdp)));
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        await connection.invoke("SendAnswer", fromConnectionId, JSON.stringify(answer));
+    });
+    connection.on("ReceiveAnswer", async (sdp) => {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(sdp)));
+    });
+    connection.on("ReceiveIce", async (candidate) => {
+        if (peerConnection) {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
         }
     });
 
-    // Nhận tín hiệu WebRTC
-    connection.on("ReceiveSignal", async (signal, fromConnectionId) => {
-        if (!peerConnection) return;
-
-        const desc = JSON.parse(signal);
-        if (desc.type === "offer") {
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(desc));
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-            await connection.invoke("SendSignal", JSON.stringify(answer), fromConnectionId);
-        } else if (desc.type === "answer") {
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(desc));
-        } else if (desc.candidate) {
-            await peerConnection.addIceCandidate(new RTCIceCandidate(desc.candidate));
-        }
-    });
-    
     // Bắt đầu kết nối
     try {
         await connection.start();
-        statusEl.textContent = "Đã kết nối!"; // ĐÃ SỬA
-        statusEl.className = "status";
+        statusEL.textContent = "Đã kết nối!";
+        statusEL.className = "status";
     } catch (err) {
-        statusEl.textContent = "Lỗi kết nối SignalR!";
-        statusEl.className = "status offline";
+        statusEL.textContent = "Lỗi kết nối SignalR!";
+        statusEL.className = "status offline";
         console.error(err);
     }
 }
 
-// === RENDER DANH SÁCH BẠN ===
+// === CÁC HÀM XỬ LÝ DANH SÁCH BẠN ===
 function renderFriends(friends) {
     friendList.innerHTML = "";
     if (friends.length === 0) {
-        friendList.innerHTML = "<li>Không có bạn online</li>";
+        friendList.innerHTML = "<li id='no-friends-msg'>Không có bạn online</li>";
         return;
     }
-
     friends.forEach(f => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-      <span><strong>${f.name}</strong></span>
-      <button onclick="addFriend('${f.id}')">Kết bạn</button>
-      <button onclick="callUser('${f.connectionId}')">Gọi</button>
-    `;
-        friendList.appendChild(li);
+        addFriendToList(f);
     });
 }
 
-
-// === GỌI NGƯỜI DÙNG ===
-async function callUser(targetConnectionId) {
-    currentCallId = targetConnectionId;
-    await startCall(targetConnectionId, true);
+function addFriendToList(user) {
+    const noFriendsMsg = document.getElementById("no-friends-msg");
+    if (noFriendsMsg) {
+        noFriendsMsg.remove();
+    }
+    const li = document.createElement("li");
+    li.id = `user-${user.id}`;
+    const nameSpan = document.createElement("span");
+    nameSpan.innerHTML = `<strong>${user.name}</strong>`;
+    nameSpan.style.cursor = "pointer";
+    nameSpan.style.textDecoration = "underline";
+    nameSpan.addEventListener('click', () => {
+        callUser(user.id);
+    });
+    li.appendChild(nameSpan);
+    friendList.appendChild(li);
 }
 
-// === BẮT ĐẦU CUỘC GỌI ===
+function removeFriendFromList(userId) {
+    const userElement = document.getElementById(`user-${userId}`);
+    if (userElement) {
+        userElement.remove();
+    }
+    if (friendList.children.length === 0) {
+        friendList.innerHTML = "<li id='no-friends-msg'>Không có bạn online</li>";
+    }
+}
+
+// === CÁC HÀM XỬ LÝ CUỘC GỌI ===
+async function callUser(targetUserId) {
+    await connection.invoke("CallFriend", targetUserId);
+}
+
 async function startCall(targetConnectionId, isCaller) {
     await getLocalStream();
-
     peerConnection = new RTCPeerConnection(iceServers);
-
-    // Thêm track local
     localStream.getTracks().forEach(track => {
         peerConnection.addTrack(track, localStream);
     });
-
-    // Nhận track remote
     peerConnection.ontrack = (event) => {
         remoteStream = event.streams[0];
         remoteVideo.srcObject = remoteStream;
     };
-
-    // Gửi ICE candidate
     peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
-            connection.invoke("SendSignal", JSON.stringify({ candidate: event.candidate }), targetConnectionId);
+            connection.invoke("SendIce", targetConnectionId, event.candidate);
         }
     };
-
     if (isCaller) {
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(offer);
-        await connection.invoke("SendSignal", JSON.stringify(offer), targetConnectionId);
+        await connection.invoke("SendOffer", targetConnectionId, JSON.stringify(offer));
     }
-
     hangupBtn.disabled = false;
     hangupBtn.onclick = hangUp;
 }
 
-// === NGẮT CUỘC GỌI ===
 function hangUp() {
     if (peerConnection) {
         peerConnection.close();
@@ -139,10 +165,9 @@ function hangUp() {
     }
     remoteVideo.srcObject = null;
     hangupBtn.disabled = true;
-    currentCallId = null;
+    currentTargetConnectionId = null;
 }
 
-// === LẤY CAMERA + MIC ===
 async function getLocalStream() {
     if (localStream) return;
     try {
@@ -153,17 +178,15 @@ async function getLocalStream() {
     }
 }
 
-// === GỬI KẾT BẠN ===
 async function addFriend(friendId) {
     try {
-        await connection.invoke("AddFriend", friendId);
+        await connection.invoke("SendFriendRequest", friendId);
         alert("Đã gửi lời mời kết bạn!");
     } catch (err) {
-        alert("Lỗi gửi kết bạn!");
+        // (Xử lý lỗi nếu cần)
     }
 }
 
-// === KHỞI ĐỘNG ===
 document.addEventListener("DOMContentLoaded", () => {
     startSignalR();
     hangupBtn.disabled = true;

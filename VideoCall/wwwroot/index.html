@@ -104,14 +104,12 @@
 </head>
 <body>
     <div class="container">
-        <!-- Danh sách bạn bè -->
         <div class="panel">
             <h2>Bạn bè online</h2>
             <ul id="friendList"></ul>
             <div id="status" class="status">Đang kết nối...</div>
         </div>
 
-        <!-- Video call -->
         <div class="panel">
             <h2>Video Call</h2>
             <video id="localVideo" autoplay muted playsinline></video>
@@ -124,12 +122,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
     <script src="/js/signaling-client.js"></script>
+    <script src="wwwroot/login"></script>
 
-    <script>
-        // Kiểm tra đăng nhập
-        if (!localStorage.getItem("authToken")) {
-            window.location.href = "/login.html";
-        }
-    </script>
 </body>
 </html>
