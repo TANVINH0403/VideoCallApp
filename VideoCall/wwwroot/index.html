@@ -1,126 +1,135 @@
 ﻿<!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Video Call</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js" defer></script>
     <style>
-        body {
+        * {
             margin: 0;
-            font-family: Arial;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: #f4f6f9;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
             display: flex;
-            height: 100vh
+            gap: 20px;
+            flex-wrap: wrap;
         }
 
-        #sidebar {
-            width: 300px;
-            border-right: 1px solid #ddd;
-            padding: 10px;
-            background: #f9f9f9;
-            overflow-y: auto
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            flex: 1;
+            min-width: 300px;
         }
 
-        .friend {
-            padding: 12px;
+        h2 {
+            margin-bottom: 15px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        #localVideo, #remoteVideo {
+            width: 100%;
+            height: 200px;
+            background: #000;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .controls {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
             cursor: pointer;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            border-bottom: 1px solid #eee
+            font-weight: 500;
         }
 
-            .friend img {
-                width: 40px;
-                height: 40px;
-                border-radius: 50%
+            button:hover {
+                background: #5a6fd8;
             }
 
-        .status {
-            width: 10px;
-            height: 10px;
-            background: #ccc;
-            border-radius: 50%
+            button:disabled {
+                background: #ccc;
+                cursor: not-allowed;
+            }
+
+        ul {
+            list-style: none;
+            margin-top: 10px;
         }
 
-        .friend.online .status {
-            background: #0f0
-        }
-
-        #chat {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            display: none
-        }
-
-        #chatHeader {
-            padding: 15px;
+        li {
+            padding: 12px;
             border-bottom: 1px solid #eee;
             display: flex;
             justify-content: space-between;
-            background: #fff
+            align-items: center;
         }
 
-        #videoContainer {
-            flex: 1;
-            background: #000;
-            position: relative;
-            display: none
-        }
-
-        #remoteVideo {
-            width: 100%;
-            height: 100%;
-            object-fit: cover
-        }
-
-        #localVideo {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 150px;
-            height: 100px;
-            border: 2px solid white;
-            border-radius: 8px
-        }
-
-        .btn {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 20px;
-            cursor: pointer
-        }
-
-            .btn.danger {
-                background: #dc3545
+            li button {
+                padding: 6px 12px;
+                font-size: 13px;
             }
+
+        .status {
+            font-size: 13px;
+            color: #27ae60;
+            margin-top: 10px;
+        }
+
+        .offline {
+            color: #e74c3c;
+        }
     </style>
 </head>
 <body>
-    <div id="sidebar">
-        <h3>Bạn bè</h3>
-        <div id="friendsList"></div>
-    </div>
-    <div id="chat">
-        <div id="chatHeader">
-            <strong id="chatWith"></strong>
-            <button class="btn" id="callBtn">Gọi Video</button>
+    <div class="container">
+        <!-- Danh sách bạn bè -->
+        <div class="panel">
+            <h2>Bạn bè online</h2>
+            <ul id="friendList"></ul>
+            <div id="status" class="status">Đang kết nối...</div>
         </div>
-        <div id="videoContainer">
+
+        <!-- Video call -->
+        <div class="panel">
+            <h2>Video Call</h2>
+            <video id="localVideo" autoplay muted playsinline></video>
             <video id="remoteVideo" autoplay playsinline></video>
-            <video id="localVideo" autoplay playsinline muted></video>
-            <button class="btn danger" style="position:absolute;bottom:20px;left:20px;" id="hangupBtn">Ngắt</button>
+            <div class="controls">
+                <button id="hangupBtn" disabled>Ngắt cuộc gọi</button>
+            </div>
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script src="/js/signaling-client.js"></script>
+
     <script>
-        // TỰ ĐỘNG CHUYỂN VỀ LOGIN NẾU CHƯA ĐĂNG NHẬP
+        // Kiểm tra đăng nhập
         if (!localStorage.getItem("authToken")) {
             window.location.href = "/login.html";
         }
     </script>
-    <script src="/js/signaling-client.js" defer></script>
 </body>
 </html>
