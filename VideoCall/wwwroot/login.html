@@ -1,134 +1,121 @@
 ﻿<!DOCTYPE html>
 <html lang="vi">
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Đăng nhập Video Call</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', sans-serif;
-        }
+    <title>VideoCall - Đăng nhập</title>
 
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
-        .login-box {
-            background: #fff;
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 400px;
-        }
+    <link rel="stylesheet" href="login.css"/>
+  </head>
 
-        h2 {
-            text-align: center;
-            margin-bottom: 30px;
-            color: #333;
-            font-weight: 600;
-        }
+  <body>
+    <div class="login-container">
+      <!-- Left Side - Welcome Section -->
+      <div class="login-left">
+        <div class="logo">
+          <i class="fas fa-video"></i>
+          <h1>VideoCall</h1>
+        </div>
 
-        input {
-            width: 100%;
-            padding: 14px;
-            margin: 12px 0;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: 0.3s;
-        }
+        <div class="welcome-text">
+          <h2>Kết nối mọi lúc, mọi nơi</h2>
+          <p>
+            Tham gia cuộc gọi video chất lượng cao với giao diện trực quan và dễ
+            sử dụng. Kết nối với đồng nghiệp, đối tác và bạn bè chỉ với một cú
+            nhấp chuột.
+          </p>
+        </div>
 
-            input:focus {
-                outline: none;
-                border-color: #667eea;
-                box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
-            }
+        <div class="features">
+          <div class="feature">
+            <i class="fas fa-check-circle"></i><span>Video chất lượng cao</span>
+          </div>
+          <div class="feature">
+            <i class="fas fa-check-circle"></i><span>Bảo mật tuyệt đối</span>
+          </div>
+          <div class="feature">
+            <i class="fas fa-check-circle"></i><span>Dễ dàng sử dụng</span>
+          </div>
+          <div class="feature">
+            <i class="fas fa-check-circle"></i><span>Hỗ trợ đa nền tảng</span>
+          </div>
+        </div>
+      </div>
 
-        button {
-            width: 100%;
-            padding: 14px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.3s;
-        }
+      <!-- Right Side - Login Form -->
+      <div class="login-right">
+        <div class="login-form-container">
+          <div class="form-header">
+            <h2>Đăng nhập</h2>
+            <p>Đăng nhập để tiếp tục sử dụng VideoCall</p>
+          </div>
 
-            button:hover {
-                background: #5a6fd8;
-            }
+          <form class="login-form" id="loginForm">
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input
+                type="email"
+                id="email"
+                placeholder="Nhập email của bạn"
+                required
+              />
+            </div>
 
-        .error {
-            color: #e74c3c;
-            text-align: center;
-            margin-top: 15px;
-            display: none;
-            font-size: 14px;
-        }
+            <div class="form-group">
+              <label for="password">Mật khẩu</label>
+              <div class="password-container">
+                <input
+                  type="password"
+                  id="password"
+                  placeholder="Nhập mật khẩu"
+                  required
+                />
+                <button
+                  type="button"
+                  class="toggle-password"
+                  id="togglePassword"
+                >
+                  <i class="far fa-eye"></i>
+                </button>
+              </div>
+            </div>
 
-        .tip {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 13px;
-            color: #777;
-        }
-    </style>
-</head>
-<body>
-    <div class="login-box">
-        <h2>Video Call App</h2>
-        <input type="text" id="username" placeholder="Tên người dùng (Nam, Hùng, Lan, Minh)" />
-        <input type="password" id="password" placeholder="Mật khẩu (123)" />
-        <button id="loginBtn">Đăng nhập</button>
-        <div class="error" id="error"></div>
-        <div class="tip">Dùng: <b>Nam / 123</b> để test</div>
+            <div class="form-options">
+              <label class="remember-me">
+                <input type="checkbox" id="rememberMe" />
+                <span>Ghi nhớ đăng nhập</span>
+              </label>
+              <a href="#" class="forgot-password">Quên mật khẩu?</a>
+            </div>
+
+            <button type="submit" class="login-btn">Đăng nhập</button>
+
+            <div class="divider"><span>Hoặc đăng nhập với</span></div>
+
+            <div class="social-login">
+              <button type="button" class="social-btn google">
+                <i class="fab fa-google"></i> <span>Google</span>
+              </button>
+              <button type="button" class="social-btn facebook">
+                <i class="fab fa-facebook-f"></i> <span>Facebook</span>
+              </button>
+            </div>
+
+            <div class="signup-link">
+              <p>
+                Chưa có tài khoản? <a href="#" id="signupLink">Đăng ký ngay</a>
+              </p>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
-    <script>
-        document.getElementById("loginBtn").onclick = async () => {
-            const name = document.getElementById("username").value.trim();
-            const pass = document.getElementById("password").value;
-            const error = document.getElementById("error");
-
-            if (!name || !pass) {
-                error.textContent = "Vui lòng nhập đầy đủ!";
-                error.style.display = "block";
-                return;
-            }
-
-            try {
-                const res = await fetch("/api/auth/login", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ name, password: pass })
-                });
-
-                if (res.ok) {
-                    const { token } = await res.json();
-                    localStorage.setItem("authToken", token);
-                    window.location.href = "/";
-                } else {
-                    error.textContent = "Sai tên hoặc mật khẩu!";
-                    error.style.display = "block";
-                }
-            } catch (e) {
-                error.textContent = "Lỗi kết nối!";
-                error.style.display = "block";
-            }
-        };
-            
-    </script>
-</body>
+    
+    <script src="login.js"></script>
+  </body>
 </html>
