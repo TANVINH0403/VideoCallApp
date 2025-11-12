@@ -1,0 +1,24 @@
+﻿<script>
+document.getElementById("loginBtn").onclick = async () => {
+    const n = document.getElementById("username").value.trim();
+    const p = document.getElementById("password").value;
+    if (!n || !p) return;
+
+    const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: n, password: p })
+    });
+
+    const error = document.getElementById("error");
+    if (response.ok) {
+        const { token, name } = await response.json();
+        localStorage.setItem("authToken", token);
+        localStorage.setItem("userName", name);
+        window.location.href = "/";
+    } else {
+        error.textContent = "Sai tên hoặc mật khẩu";
+        error.style.display = "block";
+    }
+};
+</script>
