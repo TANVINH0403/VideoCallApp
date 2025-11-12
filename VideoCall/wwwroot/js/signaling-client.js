@@ -31,22 +31,18 @@ async function startSignalR() {
         .build();
 
     // === CÁC HÀM NHẬN TÍN HIỆU TỪ SERVER ===
-
     connection.on("LoadFriends", (friends) => {
         renderFriends(friends);
     });
 
-    // THÊM MỚI: Xử lý khi có bạn mới online
     connection.on("FriendOnline", (user) => {
         addFriendToList(user);
     });
 
-    // THÊM MỚI: Xử lý khi có bạn offline
     connection.on("FriendOffline", (userId) => {
         removeFriendFromList(userId);
     });
 
-    // (Các hàm nhận cuộc gọi giữ nguyên)
     connection.on("IncomingCall", (callerConnectionId, callerName) => {
         if (confirm(`${callerName} đang gọi. Bạn có muốn trả lời?`)) {
             currentTargetConnectionId = callerConnectionId;
@@ -94,7 +90,6 @@ async function startSignalR() {
 }
 
 // === CÁC HÀM XỬ LÝ DANH SÁCH BẠN ===
-
 function renderFriends(friends) {
     friendList.innerHTML = "";
     if (friends.length === 0) {
@@ -111,19 +106,15 @@ function addFriendToList(user) {
     if (noFriendsMsg) {
         noFriendsMsg.remove();
     }
-
     const li = document.createElement("li");
     li.id = `user-${user.id}`;
-
     const nameSpan = document.createElement("span");
     nameSpan.innerHTML = `<strong>${user.name}</strong>`;
-
     nameSpan.style.cursor = "pointer";
     nameSpan.style.textDecoration = "underline";
     nameSpan.addEventListener('click', () => {
         callUser(user.id);
     });
-
     li.appendChild(nameSpan);
     friendList.appendChild(li);
 }
@@ -139,37 +130,30 @@ function removeFriendFromList(userId) {
 }
 
 // === CÁC HÀM XỬ LÝ CUỘC GỌI ===
-
 async function callUser(targetUserId) {
     await connection.invoke("CallFriend", targetUserId);
 }
 
 async function startCall(targetConnectionId, isCaller) {
     await getLocalStream();
-
     peerConnection = new RTCPeerConnection(iceServers);
-
     localStream.getTracks().forEach(track => {
         peerConnection.addTrack(track, localStream);
     });
-
     peerConnection.ontrack = (event) => {
         remoteStream = event.streams[0];
         remoteVideo.srcObject = remoteStream;
     };
-
     peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
             connection.invoke("SendIce", targetConnectionId, event.candidate);
         }
     };
-
     if (isCaller) {
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(offer);
         await connection.invoke("SendOffer", targetConnectionId, JSON.stringify(offer));
     }
-
     hangupBtn.disabled = false;
     hangupBtn.onclick = hangUp;
 }

@@ -26,7 +26,6 @@ namespace VideoCall.Web.Application.Services
             return Task.CompletedTask;
         }
 
-        // Sửa đổi ở đây
         public Task<User?> SetOfflineAsync(string connectionId)
         {
             if (_onlineUsers.Remove(connectionId, out var user))
@@ -47,10 +46,12 @@ namespace VideoCall.Web.Application.Services
 
         public User? GetByConnectionId(string connectionId)
             => _onlineUsers.GetValueOrDefault(connectionId);
+
+        // Thêm mới
         public User? GetOnlineUserById(string userId)
             => _onlineUsers.Values.FirstOrDefault(u => u.Id == userId);
+
         public IReadOnlyList<User> GetAllUsers()
             => userRepo.GetAll();
-
     }
 }

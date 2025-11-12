@@ -31,7 +31,6 @@ namespace VideoCall.Infrastructure.SignalR
                 var friends = await _userService.GetOnlineFriendsAsync(user.Id);
                 await Clients.Caller.SendAsync("LoadFriends", friends.Select(f => new { f.Id, f.Name }));
 
-                // Sửa đổi ở đây: Gửi đối tượng User cho người khác
                 await Clients.Others.SendAsync("FriendOnline", new { user.Id, user.Name });
             }
             catch { Context.Abort(); }
@@ -41,7 +40,6 @@ namespace VideoCall.Infrastructure.SignalR
 
         public override async Task OnDisconnectedAsync(Exception? ex)
         {
-            // Sửa đổi ở đây: Lấy User và gửi UserID
             var user = await _userService.SetOfflineAsync(Context.ConnectionId);
             if (user != null)
             {
@@ -53,24 +51,16 @@ namespace VideoCall.Infrastructure.SignalR
         public async Task CallFriend(string targetUserId)
         {
             var caller = _userService.GetByConnectionId(Context.ConnectionId);
-
-            // Tìm người dùng trong danh sách ONLINE, không phải GetAllUsers
+            // SỬA Ở ĐÂY: Tìm người dùng trong danh sách ONLINE
             var targetUser = _userService.GetOnlineUserById(targetUserId);
 
             if (caller == null || targetUser == null)
             {
-                // Một trong hai người không online hoặc không tồn tại
                 return;
             }
 
-            // (có thể thêm kiểm tra tình bạn ở đây nếu muốn)
-            // if (await _friendshipService.AreFriendsAsync(caller.Id, targetUserId))
-            // {
-
-            // Gửi cuộc gọi đến ConnectionID của người nhận
+            // (Bỏ qua kiểm tra tình bạn)
             await Clients.Client(targetUser.ConnectionId).SendAsync("IncomingCall", Context.ConnectionId, caller.Name);
-
-            // }
         }
 
         public async Task AcceptCall(string callerId) => await Clients.Client(callerId).SendAsync("CallAccepted", Context.ConnectionId);
@@ -83,7 +73,6 @@ namespace VideoCall.Infrastructure.SignalR
             await Clients.Client(targetId).SendAsync("ReceiveIce", candidate);
         }
 
-        // (Các hàm bạn bè giữ nguyên)
         public async Task SendFriendRequest(string targetId)
         {
             var sender = _userService.GetByConnectionId(Context.ConnectionId);
