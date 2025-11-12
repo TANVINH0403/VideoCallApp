@@ -10,15 +10,15 @@ namespace VideoCall.Application.Services
 
         public FriendshipService(IRepository<Friendship> repo) => this.repo = repo;
 
-        public async Task<bool> AreFriendsAsync(string user1Id, string user2Id)
+        public Task<bool> AreFriendsAsync(string userId1, string userId2)
         {
-            var (a, b) = user1Id.CompareTo(user2Id) < 0 ? (user1Id, user2Id) : (user2Id, user1Id);
-            return repo.GetAll().Any(f => f.User1Id == a && f.User2Id == b);
+            var (a, b) = userId1.CompareTo(userId2) < 0 ? (userId1, userId2) : (userId2, userId1);
+            return Task.FromResult(repo.GetAll().Any(f => f.User1Id == a && f.User2Id == b));
         }
 
-        public async Task AddFriendshipAsync(string user1Id, string user2Id)
+        public async Task AddFriendshipAsync(string userId1, string userId2)
         {
-            var (a, b) = user1Id.CompareTo(user2Id) < 0 ? (user1Id, user2Id) : (user2Id, user1Id);
+            var (a, b) = userId1.CompareTo(userId2) < 0 ? (userId1, userId2) : (userId2, userId1);
             if (!await AreFriendsAsync(a, b))
             {
                 var list = repo as List<Friendship>;

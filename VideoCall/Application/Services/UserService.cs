@@ -1,5 +1,4 @@
-﻿// Application/Services/UserService.cs
-using BCrypt.Net;
+﻿using BCrypt.Net;
 using System.Collections.Generic;
 using VideoCall.Application.Interfaces;
 using VideoCall.Web.Domain.Entities;
@@ -27,11 +26,15 @@ namespace VideoCall.Web.Application.Services
             return Task.CompletedTask;
         }
 
-        public Task SetOfflineAsync(string connectionId)
+        // Sửa đổi ở đây
+        public Task<User?> SetOfflineAsync(string connectionId)
         {
             if (_onlineUsers.Remove(connectionId, out var user))
+            {
                 user.SetOffline();
-            return Task.CompletedTask;
+                return Task.FromResult<User?>(user);
+            }
+            return Task.FromResult<User?>(null);
         }
 
         public Task<List<User>> GetOnlineFriendsAsync(string currentUserId)
@@ -44,8 +47,10 @@ namespace VideoCall.Web.Application.Services
 
         public User? GetByConnectionId(string connectionId)
             => _onlineUsers.GetValueOrDefault(connectionId);
-
+        public User? GetOnlineUserById(string userId)
+            => _onlineUsers.Values.FirstOrDefault(u => u.Id == userId);
         public IReadOnlyList<User> GetAllUsers()
             => userRepo.GetAll();
+
     }
 }
