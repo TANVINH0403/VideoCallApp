@@ -17,8 +17,8 @@ document
   });
 
 // Handle form submit
-document.getElementById("loginForm").addEventListener("submit", function (e) {
-  e.preventDefault();
+document.getElementById("loginForm").addEventListener("submit", async function (e) {
+    e.preventDefault(); // Ngăn trang refresh
 
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -28,9 +28,28 @@ document.getElementById("loginForm").addEventListener("submit", function (e) {
     return;
   }
 
-  console.log("Login attempt with:", { email, password });
-  alert("Đăng nhập thành công!");
-  // window.location.href = "main-app.html";
+    // Bắt đầu gọi API
+    try {
+        // Code này gọi API để lấy dữ liệu từ Program.cs
+        const res = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "ContentType": "application/json" },
+            body: JSON.stringify({ name: name, password: password })
+        });
+
+        if (res.ok) {
+            const { token } = await res.json();
+            localStorage.setItem("authToken", token);
+            window.location.href = "/"; // Vào trang chính (index.html)
+        } else {
+            const errorText = await res.text();
+            errorDiv.textContent = errorText || "Sai tên hoặc mật khẩu!";
+            errorDiv.style.display = "block";
+        }
+    } catch (err) {
+        errorDiv.textContent = "Lỗi kết nối máy chủ!";
+        errorDiv.style.display = "block";
+    }
 });
 
 // Social login
