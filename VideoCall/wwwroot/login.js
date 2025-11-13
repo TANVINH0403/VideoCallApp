@@ -35,7 +35,7 @@ document.getElementById("loginForm").addEventListener("submit", async function (
         // Code này gọi API để lấy dữ liệu từ Program.cs
         const res = await fetch("/api/auth/login", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "ContentType": "application/json" },
             body: JSON.stringify({ name: name, password: password })
         });
 

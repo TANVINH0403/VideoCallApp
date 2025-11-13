@@ -15,7 +15,7 @@ builder.Services.AddSingleton<IRepository<User>>(sp =>
     var users = new List<User>
     {
         new("Nam", BCrypt.Net.BCrypt.HashPassword("123")),
-        new("Hung123@gmail.com", BCrypt.Net.BCrypt.HashPassword("123")), // <-- Đã sửa lỗi "Hng"
+        new("Hùng", BCrypt.Net.BCrypt.HashPassword("123")), // <-- Đã sửa lỗi "Hng"
         new("Lan", BCrypt.Net.BCrypt.HashPassword("123")),
         new("Minh", BCrypt.Net.BCrypt.HashPassword("123"))
     };
@@ -25,9 +25,9 @@ builder.Services.AddSingleton<IRepository<User>>(sp =>
 builder.Services.AddSingleton<IRepository<Friendship>>(sp =>
     new InMemoryRepository<Friendship>(new List<Friendship>()));
 
-// SỬA LỖI Ở ĐÂY: UserService phải là Singleton để chia sẻ danh sách online
+// SỬA LỖI Ở ĐÂY: UserService phải là Singleton
 builder.Services.AddSingleton<IUserService, UserService>();
-builder.Services.AddScoped<IFriendshipService, FriendshipService>(); // FriendshipService có thể là Scoped
+builder.Services.AddScoped<IFriendshipService, FriendshipService>();
 
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
@@ -43,7 +43,6 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Đặt login.html là trang mặc định (Đúng)
 app.UseDefaultFiles(new DefaultFilesOptions
 {
     DefaultFileNames = new List<string> { "login.html" }
@@ -55,6 +54,6 @@ app.UseCors("AllowAll");
 
 app.MapControllers();
 app.MapHub<VideoCallHub>("/hubs");
-app.MapFallbackToFile("index.html"); // Dành cho trang chính sau khi đăng nhập
+app.MapFallbackToFile("index.html");
 
 app.Run();
