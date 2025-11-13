@@ -25,8 +25,10 @@ async function startSignalR() {
         return;
     }
 
+    const tunnelUrl = "https://video-call.cfargotunnel.com";
+
     connection = new signalR.HubConnectionBuilder()
-        .withUrl(`/hubs?token=${token}`)
+        .withUrl(`${tunnelUrl}/hubs?token=${token}`) // DÙNG URL ĐẦY ĐỦ
         .withAutomaticReconnect()
         .build();
 
@@ -80,12 +82,11 @@ async function startSignalR() {
     // Bắt đầu kết nối
     try {
         await connection.start();
-        statusEL.textContent = "Đã kết nối!";
-        statusEL.className = "status";
+        console.log("SignalR Connected.");
+        document.getElementById("signalr-error")?.remove();
     } catch (err) {
-        statusEL.textContent = "Lỗi kết nối SignalR!";
-        statusEL.className = "status offline";
-        console.error(err);
+        console.error("SignalR Connection Error: ", err);
+        showError("Lỗi kết nối SignalR!");
     }
 }
 

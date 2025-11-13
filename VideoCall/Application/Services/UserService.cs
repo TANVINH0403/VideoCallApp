@@ -1,9 +1,9 @@
 ﻿using BCrypt.Net;
 using System.Collections.Generic;
 using VideoCall.Application.Interfaces;
-using VideoCall.Web.Domain.Entities;
+using VideoCall.Domain.Entities;
 
-namespace VideoCall.Web.Application.Services
+namespace VideoCall.Application.Services
 {
     public class UserService(IRepository<User> userRepo) : IUserService
     {

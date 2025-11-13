@@ -51,7 +51,7 @@ namespace VideoCall.Infrastructure.SignalR
         public async Task CallFriend(string targetUserId)
         {
             var caller = _userService.GetByConnectionId(Context.ConnectionId);
-            // SỬA Ở ĐÂY: Tìm người dùng trong danh sách ONLINE
+            //  Tìm người dùng trong danh sách ONLINE
             var targetUser = _userService.GetOnlineUserById(targetUserId);
 
             if (caller == null || targetUser == null)
@@ -59,7 +59,6 @@ namespace VideoCall.Infrastructure.SignalR
                 return;
             }
 
-            // (Bỏ qua kiểm tra tình bạn)
             await Clients.Client(targetUser.ConnectionId).SendAsync("IncomingCall", Context.ConnectionId, caller.Name);
         }
 

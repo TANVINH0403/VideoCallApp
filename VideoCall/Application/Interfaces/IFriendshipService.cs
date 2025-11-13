@@ -1,5 +1,4 @@
-﻿using VideoCall.Web.Domain.Entities;
-
+﻿
 namespace VideoCall.Application.Interfaces
 {
     public interface IFriendshipService

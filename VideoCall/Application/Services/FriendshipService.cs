@@ -1,6 +1,5 @@
 ﻿using VideoCall.Application.Interfaces;
 using VideoCall.Domain.Entities;
-using VideoCall.Web.Domain.Entities;
 
 namespace VideoCall.Application.Services
 {

@@ -1,4 +1,4 @@
-﻿using VideoCall.Web.Domain.Entities;
+﻿using VideoCall.Domain.Entities;
 
 namespace VideoCall.Application.Interfaces
 {
