@@ -1,5 +1,3 @@
-// wwwroot/login.js (Bản sửa lỗi)
-
 // Toggle password visibility
 document
     .getElementById("togglePassword")
@@ -20,9 +18,8 @@ document
 
 // Handle form submit (ĐÃ SỬA LOGIC API)
 document.getElementById("loginForm").addEventListener("submit", async function (e) {
-    e.preventDefault();
+    e.preventDefault(); // Ngăn trang refresh
 
-    // SỬA Ở ĐÂY: Lấy giá trị từ id="username"
     const name = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value;
     const errorDiv = document.getElementById("error");
@@ -35,6 +32,7 @@ document.getElementById("loginForm").addEventListener("submit", async function (
 
     // Bắt đầu gọi API
     try {
+        // Code này gọi API để lấy dữ liệu từ Program.cs
         const res = await fetch("/api/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -44,7 +42,7 @@ document.getElementById("loginForm").addEventListener("submit", async function (
         if (res.ok) {
             const { token } = await res.json();
             localStorage.setItem("authToken", token);
-            window.location.href = "/"; // Chuyển đến index.html
+            window.location.href = "/"; // Vào trang chính (index.html)
         } else {
             const errorText = await res.text();
             errorDiv.textContent = errorText || "Sai tên hoặc mật khẩu!";
