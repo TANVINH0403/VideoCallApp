@@ -1,5 +1,5 @@
 ﻿// Domain/Entities/User.cs
-namespace VideoCall.Web.Domain.Entities
+namespace VideoCall.Domain.Entities
 {
     public class User
     {
