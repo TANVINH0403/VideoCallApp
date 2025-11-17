@@ -1,53 +1,67 @@
-// Toggle password visibility
-document
-  .getElementById("togglePassword")
-  .addEventListener("click", function () {
-    const passwordInput = document.getElementById("password");
-    const icon = this.querySelector("i");
+const container = document.querySelector(".container");
+const registerBtn = document.querySelector(".register-btn");
+const loginBtn = document.querySelector(".login-btn");
 
-    if (passwordInput.type === "password") {
-      passwordInput.type = "text";
-      icon.classList.remove("fa-eye");
-      icon.classList.add("fa-eye-slash");
-    } else {
-      passwordInput.type = "password";
-      icon.classList.remove("fa-eye-slash");
-      icon.classList.add("fa-eye");
+registerBtn.addEventListener("click", () => {
+  container.classList.add("active");
+});
+
+loginBtn.addEventListener("click", () => {
+  container.classList.remove("active");
+});
+
+if (loginBtn && container) {
+  loginBtn.addEventListener("click", () => {
+    container.classList.remove("active");
+  });
+}
+
+// --- Logic xử lý ĐĂNG NHẬP ---
+
+const loginForm = document.getElementById("loginForm"); // Thay 'loginForm' bằng ID của form Đăng nhập của bạn
+
+if (loginForm) {
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault(); // Ngăn chặn hành vi submit mặc định của form
+
+    // 1. Lấy dữ liệu từ input (CẦN ID CHÍNH XÁC CỦA INPUT TÊN VÀ MẬT KHẨU)
+    const nameInput = document.getElementById("loginName").value;
+    const passwordInput = document.getElementById("loginPassword").value;
+
+    const loginData = {
+      name: nameInput,
+      password: passwordInput,
+    };
+
+    try {
+      // 2. Gửi yêu cầu POST đến Controller (sử dụng fetch API)
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(loginData),
+      });
+
+      if (response.ok) {
+        // Đăng nhập THÀNH CÔNG (HTTP 200 OK)
+        const result = await response.json();
+
+        // 3. Lưu token và tên người dùng 
+        localStorage.setItem("authToken", result.token);
+        localStorage.setItem("userName", result.name);
+
+        // 4. CHUYỂN HƯỚNG sang trang chính
+        window.location.href = "/index.html";
+      } else {
+        // Đăng nhập THẤT BẠI (ví dụ: HTTP 401 Unauthorized)
+        const error = await response.text();
+        alert(`Đăng nhập thất bại: ${error}`);
+        console.error("Login failed:", error);
+      }
+    } catch (error) {
+      console.error("Lỗi kết nối:", error);
+      alert("Không thể kết nối đến máy chủ.");
     }
   });
-
-// Handle form submit
-document.getElementById("loginForm").addEventListener("submit", function (e) {
-  e.preventDefault();
-
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  if (!email || !password) {
-    alert("Vui lòng điền đầy đủ thông tin đăng nhập");
-    return;
-  }
-
-  console.log("Login attempt with:", { email, password });
-  alert("Đăng nhập thành công!");
-  // window.location.href = "main-app.html";
-});
-
-// Social login
-document
-  .querySelector(".social-btn.google")
-  .addEventListener("click", function () {
-    alert("Đăng nhập với Google");
-  });
-document
-  .querySelector(".social-btn.facebook")
-  .addEventListener("click", function () {
-    alert("Đăng nhập với Facebook");
-  });
-
-// Sign up link
-document.getElementById("signupLink").addEventListener("click", function (e) {
-  e.preventDefault();
-  alert("Chuyển hướng đến trang đăng ký");
-  // window.location.href = "signup.html";
-});
+}
