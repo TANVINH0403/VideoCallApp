@@ -20,18 +20,15 @@ const iceServers = {
 };
 
 async function startSignalR() {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-        window.location.href = "/login.html";
-        return;
-    }
+  const token = localStorage.getItem("authToken");
+  if (!token) return;
 
   connection = new signalR.HubConnectionBuilder()
     .withUrl(`/hubs?token=${token}`)
     .withAutomaticReconnect()
     .build();
 
-    // === CÁC HÀM NHẬN TÍN HIỆU TỪ SERVER ===
+    // Nhận danh sách bạn bè
     connection.on("LoadFriends", (friends) => {
         renderFriends(friends);
     });
