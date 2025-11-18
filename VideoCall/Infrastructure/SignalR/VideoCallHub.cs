@@ -29,9 +29,8 @@ namespace VideoCall.Infrastructure.SignalR
                 await _userService.SetOnlineAsync(Context.ConnectionId, user);
 
                 var friends = await _userService.GetOnlineFriendsAsync(user.Id);
-                await Clients.Caller.SendAsync("LoadFriends", friends.Select(f => new { f.Id, f.Name }));
-
-                await Clients.Others.SendAsync("FriendOnline", new { user.Id, user.Name });
+                await Clients.Caller.SendAsync("LoadFriends", friends.Select(f => new { f.Id, f.Name, f.IsOnline }));
+                await Clients.Others.SendAsync("FriendOnline", Context.ConnectionId, user.Name);
             }
             catch { Context.Abort(); }
 
@@ -48,18 +47,11 @@ namespace VideoCall.Infrastructure.SignalR
             await base.OnDisconnectedAsync(ex);
         }
 
-        public async Task CallFriend(string targetUserId)
+        public async Task CallFriend(string targetId)
         {
             var caller = _userService.GetByConnectionId(Context.ConnectionId);
-            //  Tìm người dùng trong danh sách ONLINE
-            var targetUser = _userService.GetOnlineUserById(targetUserId);
-
-            if (caller == null || targetUser == null)
-            {
-                return;
-            }
-
-            await Clients.Client(targetUser.ConnectionId).SendAsync("IncomingCall", Context.ConnectionId, caller.Name);
+            if (caller != null && await _friendshipService.AreFriendsAsync(caller.Id, targetId))
+                await Clients.Client(targetId).SendAsync("IncomingCall", Context.ConnectionId, caller.Name);
         }
 
         public async Task AcceptCall(string callerId) => await Clients.Client(callerId).SendAsync("CallAccepted", Context.ConnectionId);
@@ -96,7 +88,7 @@ namespace VideoCall.Infrastructure.SignalR
             if (user != null)
             {
                 var friends = await _userService.GetOnlineFriendsAsync(user.Id);
-                await Clients.Client(id).SendAsync("LoadFriends", friends.Select(f => new { f.Id, f.Name }));
+                await Clients.Client(id).SendAsync("LoadFriends", friends.Select(f => new { f.Id, f.Name, f.IsOnline }));
             }
         }
     }

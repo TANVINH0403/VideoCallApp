@@ -1,73 +1,67 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const loginForm = document.getElementById('loginForm');
-    const usernameInput = document.getElementById('username'); // Tham chiếu đến ID mới
-    const passwordInput = document.getElementById('password');
-    const togglePasswordButton = document.getElementById('togglePassword');
+const container = document.querySelector(".container");
+const registerBtn = document.querySelector(".register-btn");
+const loginBtn = document.querySelector(".login-btn");
 
-    // --- 1. Tạo và chèn element hiển thị lỗi ---
-    const errorDisplay = document.createElement('p');
-    errorDisplay.style.color = 'red';
-    errorDisplay.style.marginTop = '10px';
-    errorDisplay.style.textAlign = 'center';
-    errorDisplay.style.fontWeight = 'bold';
-
-    // Chèn thông báo lỗi vào form trước nút Đăng nhập
-    const loginButton = loginForm.querySelector('.login-btn');
-    if (loginButton) {
-        loginForm.insertBefore(errorDisplay, loginButton);
-    }
-
-
-    // --- 2. LOGIC HIỂN THỊ/ẨN MẬT KHẨU ---
-    togglePasswordButton.addEventListener('click', () => {
-        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordInput.setAttribute('type', type);
-
-        // Thay đổi icon mắt (Font Awesome)
-        const icon = togglePasswordButton.querySelector('i');
-        icon.classList.toggle('fa-eye');
-        icon.classList.toggle('fa-eye-slash'); // Giả định bạn có fa-eye-slash
-    });
-
-
-    // --- 3. LOGIC XỬ LÝ ĐĂNG NHẬP (Kết nối với ASP.NET Core API) ---
-    loginForm.addEventListener('submit', async function (event) {
-        event.preventDefault();
-
-        const usernameValue = usernameInput.value; // Lấy giá trị từ trường usernameInput// Dùng giá trị email làm Username
-        const passwordValue = passwordInput.value;
-
-        errorDisplay.textContent = ''; // Xóa thông báo lỗi cũ
-
-        try {
-            const response = await fetch('/api/Account/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                // Body JSON phải khớp với lớp LoginRequest.cs (Username, Password)
-                body: JSON.stringify({
-                    // Gửi emailValue dưới tên thuộc tính 'Username'
-                    Username: usernameValue,
-                    Password: passwordValue
-                })
-            });
-
-            if (response.ok) {
-                // Đăng nhập thành công (200 OK), chuyển hướng đến trang chính
-                console.log('Đăng nhập thành công.');
-                window.location.href = '/index.html';
-            } else if (response.status === 401) {
-                // Xác thực thất bại (401 Unauthorized)
-                const errorData = await response.json();
-                errorDisplay.textContent = errorData.message || 'Tên đăng nhập hoặc mật khẩu không đúng.';
-            } else {
-                // Các lỗi HTTP khác (ví dụ: 500 Internal Server Error)
-                errorDisplay.textContent = 'Lỗi máy chủ. Vui lòng thử lại sau.';
-            }
-        } catch (error) {
-            console.error('Lỗi kết nối API:', error);
-            errorDisplay.textContent = 'Không thể kết nối đến máy chủ. Kiểm tra kết nối mạng.';
-        }
-    });
+registerBtn.addEventListener("click", () => {
+  container.classList.add("active");
 });
+
+loginBtn.addEventListener("click", () => {
+  container.classList.remove("active");
+});
+
+if (loginBtn && container) {
+  loginBtn.addEventListener("click", () => {
+    container.classList.remove("active");
+  });
+}
+
+// --- Logic xử lý ĐĂNG NHẬP ---
+
+const loginForm = document.getElementById("loginForm"); // Thay 'loginForm' bằng ID của form Đăng nhập của bạn
+
+if (loginForm) {
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault(); // Ngăn chặn hành vi submit mặc định của form
+
+    // 1. Lấy dữ liệu từ input (CẦN ID CHÍNH XÁC CỦA INPUT TÊN VÀ MẬT KHẨU)
+    const nameInput = document.getElementById("loginName").value;
+    const passwordInput = document.getElementById("loginPassword").value;
+
+    const loginData = {
+      name: nameInput,
+      password: passwordInput,
+    };
+
+    try {
+      // 2. Gửi yêu cầu POST đến Controller (sử dụng fetch API)
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(loginData),
+      });
+
+      if (response.ok) {
+        // Đăng nhập THÀNH CÔNG (HTTP 200 OK)
+        const result = await response.json();
+
+        // 3. Lưu token và tên người dùng 
+        localStorage.setItem("authToken", result.token);
+        localStorage.setItem("userName", result.name);
+
+        // 4. CHUYỂN HƯỚNG sang trang chính
+        window.location.href = "/index.html";
+      } else {
+        // Đăng nhập THẤT BẠI (ví dụ: HTTP 401 Unauthorized)
+        const error = await response.text();
+        alert(`Đăng nhập thất bại: ${error}`);
+        console.error("Login failed:", error);
+      }
+    } catch (error) {
+      console.error("Lỗi kết nối:", error);
+      alert("Không thể kết nối đến máy chủ.");
+    }
+  });
+}
