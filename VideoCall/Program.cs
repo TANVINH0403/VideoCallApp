@@ -4,18 +4,15 @@ using VideoCall.Application.Services;
 using VideoCall.Domain.Entities;
 using VideoCall.Infrastructure.Data;
 using VideoCall.Infrastructure.SignalR;
-using VideoCall.Web.Application.Services;
-using VideoCall.Web.Domain.Entities;
-
 var builder = WebApplication.CreateBuilder(args);
 
-// === DI � SOLID ===
+// === DI ===
 builder.Services.AddSingleton<IRepository<User>>(sp =>
 {
     var users = new List<User>
     {
         new("Nam", BCrypt.Net.BCrypt.HashPassword("123")),
-        new("H�ng", BCrypt.Net.BCrypt.HashPassword("123")),
+        new("Hùng", BCrypt.Net.BCrypt.HashPassword("123")), 
         new("Lan", BCrypt.Net.BCrypt.HashPassword("123")),
         new("Minh", BCrypt.Net.BCrypt.HashPassword("123"))
     };
@@ -49,7 +46,6 @@ app.UseDefaultFiles(new DefaultFilesOptions
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowAll");
-
 
 
 app.MapControllers();

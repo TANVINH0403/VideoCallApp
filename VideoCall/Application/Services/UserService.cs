@@ -5,13 +5,20 @@ using VideoCall.Domain.Entities;
 
 namespace VideoCall.Application.Services
 {
-    public class UserService(IRepository<User> userRepo) : IUserService
+    public class UserService : IUserService
     {
-        private readonly Dictionary<string, User> _onlineUsers = [];
+        private readonly IRepository<User> userRepo;
+        private readonly Dictionary<string, User> _onlineUsers = new();
+
+        public UserService(IRepository<User> userRepo)
+        {
+            // 3. GÁN THAM SỐ DI VÀO FIELD NỘI BỘ
+            this.userRepo = userRepo;
+        }
 
         public Task<User?> LoginAsync(string name, string password)
         {
-            var user = userRepo.GetAll().FirstOrDefault(u => u.Name == name);
+            var user = this.userRepo.GetAll().FirstOrDefault(u => u.Name == name);
             return Task.FromResult(
                 user != null && BCrypt.Net.BCrypt.Verify(password, user.PasswordHash)
                     ? user

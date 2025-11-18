@@ -20,8 +20,7 @@ namespace VideoCall.Application.Services
             var (a, b) = userId1.CompareTo(userId2) < 0 ? (userId1, userId2) : (userId2, userId1);
             if (!await AreFriendsAsync(a, b))
             {
-                var list = repo as List<Friendship>;
-                list?.Add(new Friendship { User1Id = a, User2Id = b });
+                repo.Add(new Friendship { User1Id = a, User2Id = b });
             }
         }
     }

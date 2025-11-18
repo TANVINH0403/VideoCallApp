@@ -11,6 +11,7 @@ const hangupBtn = document.getElementById("hangupBtn");
 const friendList = document.getElementById("friendList");
 const statusEL = document.getElementById("status");
 
+
 const iceServers = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
@@ -19,18 +20,21 @@ const iceServers = {
 };
 
 async function startSignalR() {
-  const token = localStorage.getItem("authToken");
-  if (!token) return;
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+        window.location.href = "/login.html";
+        return;
+    }
 
   connection = new signalR.HubConnectionBuilder()
     .withUrl(`/hubs?token=${token}`)
     .withAutomaticReconnect()
     .build();
 
-  // Nhận danh sách bạn bè
-  connection.on("LoadFriends", (friends) => {
-    renderFriends(friends);
-  });
+    // === CÁC HÀM NHẬN TÍN HIỆU TỪ SERVER ===
+    connection.on("LoadFriends", (friends) => {
+        renderFriends(friends);
+    });
 
   // ... (Các hàm connection.on khác giữ nguyên)
   connection.on("IncomingCall", (callerConnectionId) => {

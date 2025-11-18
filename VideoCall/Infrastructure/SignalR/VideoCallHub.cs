@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using System.Text;
 using VideoCall.Application.Interfaces;
+using VideoCall.Domain.Entities;
 
 namespace VideoCall.Infrastructure.SignalR
 {
@@ -18,21 +19,27 @@ namespace VideoCall.Infrastructure.SignalR
         public override async Task OnConnectedAsync()
         {
             var token = Context.GetHttpContext()?.Request.Query["token"].FirstOrDefault();
-            if (string.IsNullOrEmpty(token)) { Context.Abort(); return; }
+            if (string.IsNullOrEmpty(token))
+            {
+                Context.Abort();
+                return;
+            }
 
             try
             {
                 var userId = Encoding.UTF8.GetString(Convert.FromBase64String(token));
-                var user = _userService.GetAllUsers().FirstOrDefault(u => u.Id == userId);
-                if (user == null) { Context.Abort(); return; }
+                var currentUser = _userService.GetAllUsers().FirstOrDefault();
 
-                await _userService.SetOnlineAsync(Context.ConnectionId, user);
+                if (currentUser == null)
+                {
+                    Context.Abort();
+                    return;
+                }
 
                 var friends = await _userService.GetOnlineFriendsAsync(user.Id);
                 await Clients.Caller.SendAsync("LoadFriends", friends.Select(f => new { f.Id, f.Name, f.IsOnline }));
                 await Clients.Others.SendAsync("FriendOnline", Context.ConnectionId, user.Name);
             }
-            catch { Context.Abort(); }
 
             await base.OnConnectedAsync();
         }
@@ -77,8 +84,15 @@ namespace VideoCall.Infrastructure.SignalR
             if (user != null)
             {
                 await _friendshipService.AddFriendshipAsync(user.Id, requesterId);
-                await RefreshFriends(Context.ConnectionId);
-                await RefreshFriends(requesterId);
+                if(user.ConnectionId != null)
+                {
+                    await RefreshFriends(Context.ConnectionId);
+                }
+                var requesterUser = _userService.GetAllUsers().FirstOrDefault(u => u.Id == requesterId);
+                if (requesterUser != null && requesterUser.ConnectionId != null)
+                {
+                    await RefreshFriends(requesterUser.ConnectionId);
+                }
             }
         }
 
