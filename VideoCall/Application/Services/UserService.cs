@@ -26,11 +26,21 @@ namespace VideoCall.Application.Services
             );
         }
 
-        public Task SetOnlineAsync(string connectionId, User user)
+        public Task SetOnlineAsync(string userId, string connectionId)
         {
+            var user = userRepo.GetAll().FirstOrDefault(u => u.Id.ToString() == userId);
+
+            if (user == null)
+            {
+                return Task.CompletedTask;
+            }
+
             user.SetOnline(connectionId);
+
             _onlineUsers[connectionId] = user;
+            Console.WriteLine($"User Online: {user.Name}, Count: {_onlineUsers.Count}");
             return Task.CompletedTask;
+
         }
 
         public Task<User?> SetOfflineAsync(string connectionId)
@@ -45,8 +55,9 @@ namespace VideoCall.Application.Services
 
         public Task<List<User>> GetOnlineFriendsAsync(string currentUserId)
         {
+            Console.WriteLine($"Getting friends for ID: {currentUserId}");
             var friends = _onlineUsers.Values
-                .Where(u => u.Id != currentUserId)
+                .Where(u => u.Id.ToString() != currentUserId)
                 .ToList();
             return Task.FromResult(friends);
         }
@@ -60,5 +71,6 @@ namespace VideoCall.Application.Services
 
         public IReadOnlyList<User> GetAllUsers()
             => userRepo.GetAll();
+
     }
 }
