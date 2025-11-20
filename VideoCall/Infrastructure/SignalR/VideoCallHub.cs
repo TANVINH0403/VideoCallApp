@@ -48,6 +48,7 @@ namespace VideoCall.Infrastructure.SignalR
                 Context.Abort();
                 return ;
             }
+
             await base.OnConnectedAsync();
         }
 
@@ -61,14 +62,22 @@ namespace VideoCall.Infrastructure.SignalR
             await base.OnDisconnectedAsync(ex);
         }
 
-        public async Task CallFriend(string targetConnectionId) 
+        public async Task CallFriend(string targetId)
         {
             var caller = _userService.GetByConnectionId(Context.ConnectionId);
-            var targetUser = _userService.GetByConnectionId(targetConnectionId);
-
-            if (caller != null && targetUser != null) 
+            if (caller != null)
             {
-                await Clients.Client(targetConnectionId).SendAsync("IncomingCall", Context.ConnectionId, caller.Name);
+                Console.WriteLine($"[DEBUG] Caller ({caller.Name}) is trying to call ConnectionId: {targetId}");
+
+                // Gửi tín hiệu gọi tới người nhận (targetId)
+                await Clients.Client(targetId).SendAsync("IncomingCall", Context.ConnectionId, caller.Name);
+
+                // Thêm log để biết tín hiệu đã được gửi đi
+                Console.WriteLine($"[DEBUG] Sent IncomingCall to {targetId}");
+            }
+            else
+            {
+                Console.WriteLine($"[ERROR] Caller not found for ConnectionId: {Context.ConnectionId}");
             }
         }
 
@@ -113,7 +122,7 @@ namespace VideoCall.Infrastructure.SignalR
             if (user != null)
             {
                 var friends = await _userService.GetOnlineFriendsAsync(user.Id);
-                await Clients.Client(id).SendAsync("LoadFriends", friends.Select(f => new { f.Id, f.Name, f.IsOnline, f.ConnectionId }));
+                await Clients.Client(id).SendAsync("LoadFriends", friends.Select(f => new { f.Id, f.Name, f.IsOnline }));
             }
         }
     }

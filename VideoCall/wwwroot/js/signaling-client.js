@@ -56,7 +56,7 @@ async function startSignalR() {
             await connection.invoke("AcceptCall", callerConnectionId);
 
             // 2. Khởi tạo PeerConnection (là người nhận, isCaller = false)
-            await startCall(callerConnectionId, false);
+            await startCall(callerConnectionId, true);
         } else {
             // 3. Gửi tín hiệu từ chối
             await connection.invoke("RejectCall", callerConnectionId);
