@@ -12,7 +12,7 @@ builder.Services.AddSingleton<IRepository<User>>(sp =>
     var users = new List<User>
     {
         new("Nam", BCrypt.Net.BCrypt.HashPassword("123")),
-        new("Hùng", BCrypt.Net.BCrypt.HashPassword("123")), 
+        new("Hung", BCrypt.Net.BCrypt.HashPassword("123")), 
         new("Lan", BCrypt.Net.BCrypt.HashPassword("123")),
         new("Minh", BCrypt.Net.BCrypt.HashPassword("123"))
     };
