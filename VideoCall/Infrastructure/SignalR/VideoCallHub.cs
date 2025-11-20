@@ -65,8 +65,20 @@ namespace VideoCall.Infrastructure.SignalR
         public async Task CallFriend(string targetId)
         {
             var caller = _userService.GetByConnectionId(Context.ConnectionId);
-            if (caller != null && await _friendshipService.AreFriendsAsync(caller.Id, targetId))
+            if (caller != null)
+            {
+                Console.WriteLine($"[DEBUG] Caller ({caller.Name}) is trying to call ConnectionId: {targetId}");
+
+                // Gửi tín hiệu gọi tới người nhận (targetId)
                 await Clients.Client(targetId).SendAsync("IncomingCall", Context.ConnectionId, caller.Name);
+
+                // Thêm log để biết tín hiệu đã được gửi đi
+                Console.WriteLine($"[DEBUG] Sent IncomingCall to {targetId}");
+            }
+            else
+            {
+                Console.WriteLine($"[ERROR] Caller not found for ConnectionId: {Context.ConnectionId}");
+            }
         }
 
         public async Task AcceptCall(string callerId) => await Clients.Client(callerId).SendAsync("CallAccepted", Context.ConnectionId);
