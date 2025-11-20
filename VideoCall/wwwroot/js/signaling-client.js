@@ -11,7 +11,6 @@ const hangupBtn = document.getElementById("hangupBtn");
 const friendList = document.getElementById("friendList");
 const statusEL = document.getElementById("status");
 
-
 const iceServers = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
@@ -173,15 +172,6 @@ async function getLocalStream() {
     localVideo.srcObject = localStream;
   } catch (err) {
     alert("Không thể truy cập camera/mic: " + err.message);
-  }
-}
-
-async function addFriend(friendId) {
-  try {
-    await connection.invoke("AddFriend", friendId);
-    alert("Đã gửi lời mời kết bạn!");
-  } catch (err) {
-    alert("Lỗi gửi kết bạn!");
   }
 }
 
