@@ -12,7 +12,7 @@ builder.Services.AddSingleton<IRepository<User>>(sp =>
     var users = new List<User>
     {
         new("Nam", BCrypt.Net.BCrypt.HashPassword("123")),
-        new("Hùng", BCrypt.Net.BCrypt.HashPassword("123")), 
+        new("Hung", BCrypt.Net.BCrypt.HashPassword("123")), 
         new("Lan", BCrypt.Net.BCrypt.HashPassword("123")),
         new("Minh", BCrypt.Net.BCrypt.HashPassword("123"))
     };
@@ -22,7 +22,7 @@ builder.Services.AddSingleton<IRepository<User>>(sp =>
 builder.Services.AddSingleton<IRepository<Friendship>>(sp =>
     new InMemoryRepository<Friendship>(new List<Friendship>()));
 
-builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddSingleton<IUserService, UserService>();
 builder.Services.AddScoped<IFriendshipService, FriendshipService>();
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
@@ -51,5 +51,4 @@ app.UseCors("AllowAll");
 app.MapControllers();
 app.MapHub<VideoCallHub>("/hubs");
 app.MapFallbackToFile("index.html");
-
 app.Run();
