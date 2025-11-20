@@ -4,7 +4,7 @@ using System.Text;
 using VideoCall.Application.Interfaces;
 using VideoCall.Domain.Entities;
 
-namespace VideoCall.Presentation.Controllers
+namespace VideoCall.Controller
 {
     [ApiController]
     [Route("api/auth")]

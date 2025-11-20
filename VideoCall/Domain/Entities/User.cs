@@ -17,8 +17,8 @@ namespace VideoCall.Domain.Entities
 
         public void SetOnline(string connectionId)
         {
-            IsOnline = true;
-            ConnectionId = connectionId;
+            this.IsOnline = true;
+            this.ConnectionId = connectionId;
         }
 
         public void SetOffline()
