@@ -13,8 +13,29 @@ const statusEL = document.getElementById("status");
 
 const iceServers = {
     iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
+        {
+            urls: "stun:stun.relay.metered.ca:80",
+        },
+        {
+            urls: "turn:global.relay.metered.ca:80",
+            username: "b0f9e65ea7bd51cba7566fd5",
+            credential: "gA9dO40qYeKAZxAU",
+        },
+        {
+            urls: "turn:global.relay.metered.ca:80?transport=tcp",
+            username: "b0f9e65ea7bd51cba7566fd5",
+            credential: "gA9dO40qYeKAZxAU",
+        },
+        {
+            urls: "turn:global.relay.metered.ca:443",
+            username: "b0f9e65ea7bd51cba7566fd5",
+            credential: "gA9dO40qYeKAZxAU",
+        },
+        {
+            urls: "turns:global.relay.metered.ca:443?transport=tcp",
+            username: "b0f9e65ea7bd51cba7566fd5",
+            credential: "gA9dO40qYeKAZxAU",
+        },
     ],
 };
 
@@ -56,13 +77,18 @@ async function startSignalR() {
             await connection.invoke("AcceptCall", callerConnectionId);
 
             // 2. Khởi tạo PeerConnection (là người nhận, isCaller = false)
-            await startCall(callerConnectionId, true);
+            await startCall(callerConnectionId, false);
         } else {
             // 3. Gửi tín hiệu từ chối
             await connection.invoke("RejectCall", callerConnectionId);
         }
     });
 
+    connection.on("CallAccepted", async () => {
+        // A biết rằng B đã sẵn sàng. A mới bắt đầu khởi tạo WebRTC và tạo Offer.
+        // LƯU Ý: A là người gọi, nên isCaller = true.
+        await startCall(currentTargetConnectionId, true);
+    });
 
     connection.on("ReceiveOffer", async (callerId, sdp) => {
         if (!peerConnection) return;
@@ -130,7 +156,7 @@ async function callUser(targetConnectionId, targetName) {
     await connection.invoke("CallFriend", targetConnectionId);
 
     // 2. Khởi tạo PeerConnection (là người gọi, isCaller = true)
-    await startCall(targetConnectionId, true);
+    //await startCall(targetConnectionId, true);
 }
 
 // === WEB RTC CORE LOGIC ===
@@ -147,6 +173,9 @@ async function startCall(targetConnectionId, isCaller) {
         remoteVideo.srcObject = remoteStream;
     };
 
+    peerConnection.oniceconnectionstatechange = (event) => {
+        console.log(`ICE Connection State: ${peerConnection.iceConnectionState}`);
+    }
     // 1. Gửi ICE Candidate
     peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
