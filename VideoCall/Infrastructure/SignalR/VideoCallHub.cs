@@ -69,10 +69,8 @@ namespace VideoCall.Infrastructure.SignalR
             {
                 Console.WriteLine($"[DEBUG] Caller ({caller.Name}) is trying to call ConnectionId: {targetId}");
 
-                // Gửi tín hiệu gọi tới người nhận (targetId)
                 await Clients.Client(targetId).SendAsync("IncomingCall", Context.ConnectionId, caller.Name);
 
-                // Thêm log để biết tín hiệu đã được gửi đi
                 Console.WriteLine($"[DEBUG] Sent IncomingCall to {targetId}");
             }
             else
