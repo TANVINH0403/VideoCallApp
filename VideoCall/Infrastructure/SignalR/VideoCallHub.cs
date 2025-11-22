@@ -10,7 +10,7 @@ namespace VideoCall.Infrastructure.SignalR
         private readonly IUserService _userService;
 
         // KHO LƯU TRỮ TIN NHẮN TẠM THỜI (Lưu trong RAM)
-        public static List<Message> _messageStore = new List<Message>();
+        private static List<Message> _messageStore = new();
 
         public VideoCallHub(IUserService userService)
         {
