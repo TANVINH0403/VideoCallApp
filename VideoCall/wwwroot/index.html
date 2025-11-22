@@ -3,125 +3,79 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Video Call</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', sans-serif;
-        }
-
-        body {
-            background: #f4f6f9;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: auto;
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .panel {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            flex: 1;
-            min-width: 300px;
-        }
-
-        h2 {
-            margin-bottom: 15px;
-            color: #333;
-            font-weight: 600;
-        }
-
-        #localVideo, #remoteVideo {
-            width: 100%;
-            height: 200px;
-            background: #000;
-            border-radius: 8px;
-            object-fit: cover;
-        }
-
-        .controls {
-            margin-top: 10px;
-            display: flex;
-            gap: 10px;
-        }
-
-        button {
-            padding: 10px 16px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-            button:hover {
-                background: #5a6fd8;
-            }
-
-            button:disabled {
-                background: #ccc;
-                cursor: not-allowed;
-            }
-
-        ul {
-            list-style: none;
-            margin-top: 10px;
-        }
-
-        li {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-            li button {
-                padding: 6px 12px;
-                font-size: 13px;
-            }
-
-        .status {
-            font-size: 13px;
-            color: #27ae60;
-            margin-top: 10px;
-        }
-
-        .offline {
-            color: #e74c3c;
-        }
-    </style>
+    <title>Video Messenger</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/css/messenger.css">
 </head>
 <body>
-    <div class="container">
-        <div class="panel">
-            <h2>Bạn bè online</h2>
-            <ul id="friendList"></ul>
-            <div id="status" class="status">Đang kết nối...</div>
+
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>Chats</h2>
+                <div class="search-box">
+                    <input type="text" placeholder="Tìm kiếm trên Messenger">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+            <ul class="friend-list" id="friendList">
+                </ul>
         </div>
 
-        <div class="panel">
-            <h2>Video Call</h2>
-            <video id="localVideo" autoplay muted playsinline></video>
-            <video id="remoteVideo" autoplay playsinline></video>
-            <div class="controls">
-                <button id="hangupBtn" disabled>Ngắt cuộc gọi</button>
+        <div class="chat-area">
+            <div id="welcomeScreen" class="welcome-screen">
+                <i class="fab fa-facebook-messenger"></i>
+                <h2>Chào mừng đến với VideoCall</h2>
+                <p>Chọn một người bạn để bắt đầu trò chuyện hoặc gọi điện.</p>
+            </div>
+
+            <div id="chatInterface" class="chat-interface">
+                <div class="chat-header">
+                    <div class="chat-header-user">
+                        <div class="avatar-wrapper">
+                            <div class="avatar" id="chatAvatar">?</div>
+                            <div class="status-dot online"></div>
+                        </div>
+                        <div class="user-details">
+                            <h3 id="chatName">Tên Người dùng</h3>
+                            <p style="font-size: 12px; color: var(--green-online);">Đang hoạt động</p>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <button title="Gọi thoại (Coming soon)"><i class="fas fa-phone-alt"></i></button>
+                        <button title="Gọi Video" id="btnStartVideoCall"><i class="fas fa-video"></i></button>
+                        <button title="Thông tin"><i class="fas fa-info-circle"></i></button>
+                    </div>
+                </div>
+
+                <div class="messages-box">
+                    <div class="dummy-msg">Hiện chưa có tin nhắn nào.<br>Hãy bắt đầu cuộc gọi!</div>
+                </div>
+
+                <div class="input-area">
+                    <input type="text" placeholder="Nhập tin nhắn...">
+                    <button><i class="fas fa-paper-plane"></i></button>
+                </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
-    <script src="/js/signaling-client.js"></script
+    <div id="callModal" class="call-modal">
+        <div class="video-container">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <video id="localVideo" autoplay muted playsinline></video>
+        </div>
+        <div class="call-controls">
+            <button class="control-btn btn-camera" title="Tắt Camera"><i class="fas fa-video"></i></button>
+            <button class="control-btn btn-mute" title="Tắt Mic"><i class="fas fa-microphone"></i></button>
+            <button class="control-btn btn-hangup" id="hangupBtn"><i class="fas fa-phone-slash"></i></button>
+        </div>
+        <p style="color: white; margin-top: 10px;">Đang trong cuộc gọi...</p>
+    </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script src="/js/signaling-client.js"></script>
 </body>
 </html>
