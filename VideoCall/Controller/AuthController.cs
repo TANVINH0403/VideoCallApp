@@ -3,9 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text;
 using VideoCall.Application.Interfaces;
 using VideoCall.Domain.Entities;
-using VideoCall.Web.Application.Services;
 
-namespace VideoCall.Web.Controllers
+namespace VideoCall.Controller
 {
     [ApiController]
     [Route("api/auth")]
