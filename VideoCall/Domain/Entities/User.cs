@@ -1,5 +1,5 @@
 ﻿// Domain/Entities/User.cs
-namespace VideoCall.Web.Domain.Entities
+namespace VideoCall.Domain.Entities
 {
     public class User
     {
@@ -17,8 +17,8 @@ namespace VideoCall.Web.Domain.Entities
 
         public void SetOnline(string connectionId)
         {
-            IsOnline = true;
-            ConnectionId = connectionId;
+            this.IsOnline = true;
+            this.ConnectionId = connectionId;
         }
 
         public void SetOffline()

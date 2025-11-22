@@ -4,18 +4,15 @@ using VideoCall.Application.Services;
 using VideoCall.Domain.Entities;
 using VideoCall.Infrastructure.Data;
 using VideoCall.Infrastructure.SignalR;
-using VideoCall.Web.Application.Services;
-using VideoCall.Web.Domain.Entities;
-
 var builder = WebApplication.CreateBuilder(args);
 
-// === DI – SOLID ===
+// === DI ===
 builder.Services.AddSingleton<IRepository<User>>(sp =>
 {
     var users = new List<User>
     {
         new("Nam", BCrypt.Net.BCrypt.HashPassword("123")),
-        new("Hùng", BCrypt.Net.BCrypt.HashPassword("123")), // <-- Đã sửa lỗi "Hng"
+        new("Hung", BCrypt.Net.BCrypt.HashPassword("123")), 
         new("Lan", BCrypt.Net.BCrypt.HashPassword("123")),
         new("Minh", BCrypt.Net.BCrypt.HashPassword("123"))
     };
@@ -25,7 +22,6 @@ builder.Services.AddSingleton<IRepository<User>>(sp =>
 builder.Services.AddSingleton<IRepository<Friendship>>(sp =>
     new InMemoryRepository<Friendship>(new List<Friendship>()));
 
-// SỬA LỖI Ở ĐÂY: UserService phải là Singleton
 builder.Services.AddSingleton<IUserService, UserService>();
 builder.Services.AddScoped<IFriendshipService, FriendshipService>();
 
@@ -52,8 +48,8 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowAll");
 
+
 app.MapControllers();
 app.MapHub<VideoCallHub>("/hubs");
 app.MapFallbackToFile("index.html");
-
 app.Run();
