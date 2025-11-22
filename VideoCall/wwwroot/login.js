@@ -1,62 +1,71 @@
+// login.js - Code đã sửa hoàn chỉnh
+
 const container = document.querySelector(".container");
 const registerBtn = document.querySelector(".register-btn");
 const loginBtn = document.querySelector(".login-btn");
 
-registerBtn.addEventListener("click", () => {
-  container.classList.add("active");
-});
-
-// Handle form submit
-document.getElementById("loginForm").addEventListener("submit", function (e) {
-  e.preventDefault();
-
-if (loginBtn && container) {
-  loginBtn.addEventListener("click", () => {
-    container.classList.remove("active");
-  });
+// --- 1. XỬ LÝ CHUYỂN ĐỔI GIAO DIỆN (TOGGLE) ---
+if (registerBtn) {
+    registerBtn.addEventListener("click", () => {
+        container.classList.add("active");
+    });
 }
 
-// --- Logic xử lý ĐĂNG NHẬP ---
+if (loginBtn) {
+    loginBtn.addEventListener("click", () => {
+        container.classList.remove("active");
+    });
+}
 
-const loginForm = document.getElementById("loginForm"); // Thay 'loginForm' bằng ID của form Đăng nhập của bạn
+// --- 2. XỬ LÝ ĐĂNG NHẬP ---
+const loginForm = document.getElementById("loginForm");
 
 if (loginForm) {
-  loginForm.addEventListener("submit", async (e) => {
-    e.preventDefault(); // Ngăn chặn hành vi submit mặc định của form
+    // QUAN TRỌNG: Thêm từ khóa 'async' ở đây để dùng được 'await' bên trong
+    loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault(); // Ngăn không cho trang web load lại
 
-    // 1. Lấy dữ liệu từ input (CẦN ID CHÍNH XÁC CỦA INPUT TÊN VÀ MẬT KHẨU)
-    const nameInput = document.getElementById("loginName").value;
-    const passwordInput = document.getElementById("loginPassword").value;
+        // Lấy dữ liệu từ ô nhập liệu
+        const nameInput = document.getElementById("loginName").value;
+        const passwordInput = document.getElementById("loginPassword").value;
 
-    const loginData = {
-      name: nameInput,
-      password: passwordInput,
-    };
+        // Tạo object dữ liệu gửi đi (Khớp với LoginRequest.cs của bạn: Username, Password)
+        const loginData = {
+            name: nameInput,
+            password: passwordInput,
+        };
 
-  console.log("Login attempt with:", { email, password });
-  alert("Đăng nhập thành công!");
-  // window.location.href = "main-app.html";
-});
+        try {
+            // Gửi yêu cầu đăng nhập đến API Server
+            // Đảm bảo đường dẫn khớp với AuthController: /api/auth/login
+            const response = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(loginData),
+            });
 
-      if (response.ok) {
-        // Đăng nhập THÀNH CÔNG (HTTP 200 OK)
-        const result = await response.json();
+            if (response.ok) {
+                // Đăng nhập thành công
+                const result = await response.json();
 
-        // 3. Lưu token và tên người dùng 
-        localStorage.setItem("authToken", result.token);
-        localStorage.setItem("userName", result.name);
+                // Lưu token và tên vào LocalStorage
+                localStorage.setItem("authToken", result.token);
+                localStorage.setItem("userName", result.name);
 
-        // 4. CHUYỂN HƯỚNG sang trang chính
-        window.location.href = "/index.html";
-      } else {
-        // Đăng nhập THẤT BẠI (ví dụ: HTTP 401 Unauthorized)
-        const error = await response.text();
-        alert(`Đăng nhập thất bại: ${error}`);
-        console.error("Login failed:", error);
-      }
-    } catch (error) {
-      console.error("Lỗi kết nối:", error);
-      alert("Không thể kết nối đến máy chủ.");
-    }
-  });
+                alert("Đăng nhập thành công!");
+
+                // Chuyển hướng sang trang gọi video
+                window.location.href = "/index.html";
+            } else {
+                // Đăng nhập thất bại (401 Unauthorized)
+                const errorText = await response.text();
+                alert("Đăng nhập thất bại: " + errorText);
+            }
+        } catch (error) {
+            console.error("Lỗi kết nối:", error);
+            alert("Không thể kết nối đến máy chủ (Server chưa chạy hoặc sai URL).");
+        }
+    });
 }
