@@ -6,10 +6,12 @@ namespace VideoCall.Application.Interfaces
     {
         Task<User?> LoginAsync(string name, string password);
         Task SetOnlineAsync(string userId, string connectionId);
-        Task<User?> SetOfflineAsync(string connectionId); // Sửa đổi
+        Task<User?> SetOfflineAsync(string connectionId);
+        Task<List<User>> GetAllUsersWithStatusAsync(string currentUserId);
+
         Task<List<User>> GetOnlineFriendsAsync(string currentUserId);
         User? GetByConnectionId(string connectionId);
-        User? GetOnlineUserById(string userId); // Thêm mới
+        User? GetOnlineUserById(string userId);
         IReadOnlyList<User> GetAllUsers();
     }
 }

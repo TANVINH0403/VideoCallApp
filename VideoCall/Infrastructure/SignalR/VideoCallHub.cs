@@ -8,46 +8,35 @@ namespace VideoCall.Infrastructure.SignalR
     public class VideoCallHub : Hub
     {
         private readonly IUserService _userService;
-        private readonly IFriendshipService _friendshipService;
 
-        public VideoCallHub(IUserService userService, IFriendshipService friendshipService)
+        // KHO LƯU TRỮ TIN NHẮN TẠM THỜI (Lưu trong RAM)
+        private static List<Message> _messageStore = new();
+
+        public VideoCallHub(IUserService userService)
         {
             _userService = userService;
-            _friendshipService = friendshipService;
         }
 
         public override async Task OnConnectedAsync()
         {
             var token = Context.GetHttpContext()?.Request.Query["token"].FirstOrDefault();
-            if (string.IsNullOrEmpty(token))
-            {
-                Context.Abort();
-                return;
-            }
+            if (string.IsNullOrEmpty(token)) { Context.Abort(); return; }
 
-            try
-            {
-                var userIdString = Encoding.UTF8.GetString(Convert.FromBase64String(token));
-                var currentUser = _userService.GetAllUsers().FirstOrDefault(u => u.Id == userIdString);
+            var userIdString = Encoding.UTF8.GetString(Convert.FromBase64String(token));
 
-                if (currentUser == null)
-                {
-                    Context.Abort();
-                    return;
-                }
+            // Set Online
+            await _userService.SetOnlineAsync(userIdString, Context.ConnectionId);
 
-                await _userService.SetOnlineAsync(currentUser.Id.ToString(), Context.ConnectionId);
-                var friends = await _userService.GetOnlineFriendsAsync(currentUser.Id.ToString());
-                await Clients.Caller.SendAsync("LoadFriends",
-                    friends.Select(f => new { f.Id, f.Name, f.IsOnline, f.ConnectionId }));
-                await Clients.Others.SendAsync("FriendOnline", Context.ConnectionId, currentUser.Name);
-            }
-            catch(Exception ex)
-            {
-                Console.WriteLine($"Error in OnConnectedAsync: {ex.Message}");
-                Context.Abort();
-                return ;
-            }
+            // Lấy danh sách TẤT CẢ user (kể cả offline)
+            var allUsers = await _userService.GetAllUsersWithStatusAsync(userIdString);
+
+            // Gửi danh sách về cho người vừa login
+            await Clients.Caller.SendAsync("LoadFriends",
+                allUsers.Select(f => new { f.Id, f.Name, f.IsOnline, f.ConnectionId }));
+
+            // Báo cho người khác biết mình vừa Online
+            var me = _userService.GetAllUsers().FirstOrDefault(u => u.Id == userIdString);
+            await Clients.Others.SendAsync("UserStatusChanged", userIdString, true, Context.ConnectionId); // true = Online
 
             await base.OnConnectedAsync();
         }
@@ -57,71 +46,69 @@ namespace VideoCall.Infrastructure.SignalR
             var user = await _userService.SetOfflineAsync(Context.ConnectionId);
             if (user != null)
             {
-                await Clients.Others.SendAsync("FriendOffline", user.Id);
+                // Báo cho mọi người biết mình Offline
+                await Clients.Others.SendAsync("UserStatusChanged", user.Id, false, null); // false = Offline
             }
             await base.OnDisconnectedAsync(ex);
+        }
+
+        // --- CHỨC NĂNG CHAT ---
+        public async Task SendMessage(string targetId, string content)
+        {
+            var sender = _userService.GetByConnectionId(Context.ConnectionId);
+            if (sender == null) return;
+
+            // 1. Lưu tin nhắn vào kho
+            var msg = new Message { SenderId = sender.Id, ReceiverId = targetId, Content = content };
+            _messageStore.Add(msg);
+
+            // 2. Tìm xem người nhận có online không
+            var targetUser = _userService.GetOnlineUserById(targetId);
+
+            // Gửi lại cho chính mình (để hiện lên giao diện)
+            await Clients.Caller.SendAsync("ReceiveMessage", sender.Id, content);
+
+            // Nếu người nhận Online, gửi ngay lập tức
+            if (targetUser != null && targetUser.ConnectionId != null)
+            {
+                await Clients.Client(targetUser.ConnectionId).SendAsync("ReceiveMessage", sender.Id, content);
+            }
+        }
+
+        public async Task GetChatHistory(string targetId)
+        {
+            var sender = _userService.GetByConnectionId(Context.ConnectionId);
+            if (sender == null) return;
+
+            // Lấy tin nhắn giữa 2 người (sender và target)
+            var history = _messageStore
+                .Where(m => (m.SenderId == sender.Id && m.ReceiverId == targetId) ||
+                            (m.SenderId == targetId && m.ReceiverId == sender.Id))
+                .OrderBy(m => m.Timestamp)
+                .Select(m => new { m.SenderId, m.Content })
+                .ToList();
+
+            await Clients.Caller.SendAsync("LoadChatHistory", history);
         }
 
         public async Task CallFriend(string targetId)
         {
             var caller = _userService.GetByConnectionId(Context.ConnectionId);
-            if (caller != null)
-            {
-                Console.WriteLine($"[DEBUG] Caller ({caller.Name}) is trying to call ConnectionId: {targetId}");
+            // Kiểm tra targetId có phải là ConnectionId (User Online) hay UserId (User Offline)
+            // Logic cũ của bạn dùng ConnectionId. Nếu User Offline thì không gọi được.
+            if (string.IsNullOrEmpty(targetId)) return;
 
-                await Clients.Client(targetId).SendAsync("IncomingCall", Context.ConnectionId, caller.Name);
-
-                Console.WriteLine($"[DEBUG] Sent IncomingCall to {targetId}");
-            }
-            else
-            {
-                Console.WriteLine($"[ERROR] Caller not found for ConnectionId: {Context.ConnectionId}");
-            }
+            await Clients.Client(targetId).SendAsync("IncomingCall", Context.ConnectionId, caller?.Name);
         }
-
+        public async Task EndCall(string targetId)
+        {
+            // Báo cho đối phương biết cuộc gọi đã kết thúc
+            await Clients.Client(targetId).SendAsync("CallEnded");
+        }
         public async Task AcceptCall(string callerId) => await Clients.Client(callerId).SendAsync("CallAccepted", Context.ConnectionId);
         public async Task RejectCall(string callerId) => await Clients.Client(callerId).SendAsync("CallRejected");
-
         public async Task SendOffer(string targetId, string sdp) => await Clients.Client(targetId).SendAsync("ReceiveOffer", Context.ConnectionId, sdp);
         public async Task SendAnswer(string targetId, string sdp) => await Clients.Client(targetId).SendAsync("ReceiveAnswer", sdp);
-        public async Task SendIce(string targetId, object candidate)
-        {
-            await Clients.Client(targetId).SendAsync("ReceiveIce", candidate);
-        }
-
-        public async Task SendFriendRequest(string targetId)
-        {
-            var sender = _userService.GetByConnectionId(Context.ConnectionId);
-            if (sender != null)
-                await Clients.Client(targetId).SendAsync("ReceiveFriendRequest", Context.ConnectionId, sender.Name);
-        }
-
-        public async Task AcceptFriendRequest(string requesterId)
-        {
-            var user = _userService.GetByConnectionId(Context.ConnectionId);
-            if (user != null)
-            {
-                await _friendshipService.AddFriendshipAsync(user.Id, requesterId);
-                if(user.ConnectionId != null)
-                {
-                    await RefreshFriends(Context.ConnectionId);
-                }
-                var requesterUser = _userService.GetAllUsers().FirstOrDefault(u => u.Id == requesterId);
-                if (requesterUser != null && requesterUser.ConnectionId != null)
-                {
-                    await RefreshFriends(requesterUser.ConnectionId);
-                }
-            }
-        }
-
-        private async Task RefreshFriends(string id)
-        {
-            var user = _userService.GetByConnectionId(id);
-            if (user != null)
-            {
-                var friends = await _userService.GetOnlineFriendsAsync(user.Id);
-                await Clients.Client(id).SendAsync("LoadFriends", friends.Select(f => new { f.Id, f.Name, f.IsOnline }));
-            }
-        }
+        public async Task SendIce(string targetId, object candidate) => await Clients.Client(targetId).SendAsync("ReceiveIce", candidate);
     }
 }

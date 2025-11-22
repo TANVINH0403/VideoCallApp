@@ -1,12 +1,12 @@
-﻿/* --- CSS GIAO DIỆN MESSENGER --- */
-:root {
-    --primary-color: #0084ff;
-    --bg-color: #f0f2f5;
+﻿:root {
+    --primary-color: #0a7cff;
+    --bg-color: #f2f2f7;
     --white: #ffffff;
-    --text-main: #050505;
-    --text-sub: #65676b;
-    --border-color: #e4e6eb;
-    --green-online: #31a24c;
+    --text-main: #000000;
+    --text-sub: #8e8e93;
+    --border-color: #e5e5ea;
+    --green-online: #34c759;
+    --red-hangup: #ff3b30;
 }
 
 * {
@@ -19,39 +19,42 @@
 body {
     background-color: var(--bg-color);
     height: 100vh;
+    width: 100vw;
     display: flex;
     justify-content: center;
     align-items: center;
+    overflow: hidden;
 }
 
-/* Main App Container */
 .app-container {
     width: 95vw;
     height: 90vh;
     background: var(--white);
-    border-radius: 12px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    border-radius: 18px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
     display: flex;
     overflow: hidden;
+    position: relative;
 }
 
-/* --- LEFT SIDEBAR (Danh sách bạn bè) --- */
+/* --- SIDEBAR --- */
 .sidebar {
-    width: 350px;
+    width: 320px;
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
+    background: #f9f9fb;
 }
 
 .sidebar-header {
     padding: 20px;
+    background: var(--white);
     border-bottom: 1px solid var(--border-color);
 }
 
     .sidebar-header h2 {
-        font-size: 24px;
+        font-size: 22px;
         font-weight: 700;
-        color: var(--text-main);
     }
 
 .search-box {
@@ -62,9 +65,9 @@ body {
     .search-box input {
         width: 100%;
         padding: 10px 35px 10px 15px;
-        border-radius: 20px;
+        border-radius: 10px;
         border: none;
-        background: #f0f2f5;
+        background: #eef0f4;
         outline: none;
     }
 
@@ -85,14 +88,16 @@ body {
 .friend-item {
     display: flex;
     align-items: center;
-    padding: 10px;
-    border-radius: 8px;
+    padding: 12px;
+    border-radius: 12px;
     cursor: pointer;
     transition: 0.2s;
+    margin-bottom: 5px;
 }
 
     .friend-item:hover, .friend-item.active {
-        background-color: #f2f2f2;
+        background-color: var(--white);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
 
 .avatar-wrapper {
@@ -101,53 +106,43 @@ body {
 }
 
 .avatar {
-    width: 48px;
-    height: 48px;
-    background: #ddd;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 50%;
+    color: white;
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 20px;
-    color: #555;
-    font-weight: bold;
+    font-weight: 600;
 }
 
 .status-dot {
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
     background: var(--green-online);
     border: 2px solid var(--white);
     border-radius: 50%;
     position: absolute;
     bottom: 0;
     right: 0;
-    display: none; /* Ẩn mặc định, hiện khi online */
+    display: block;
 }
 
-    .status-dot.online {
-        display: block;
+    .status-dot.offline {
+        background: #ccc;
     }
 
-.friend-info h4 {
-    font-size: 15px;
-    color: var(--text-main);
-}
-
-.friend-info p {
-    font-size: 13px;
-    color: var(--text-sub);
-}
-
-/* --- RIGHT CHAT AREA (Khu vực chat) --- */
+/* --- CHAT AREA --- */
 .chat-area {
     flex: 1;
     display: flex;
     flex-direction: column;
+    background: var(--white);
     position: relative;
 }
 
-/* Trạng thái chờ (chưa chọn bạn) */
 .welcome-screen {
     flex: 1;
     display: flex;
@@ -155,15 +150,27 @@ body {
     justify-content: center;
     align-items: center;
     color: var(--text-sub);
+    text-align: center;
+    padding: 20px;
 }
 
-    .welcome-screen i {
-        font-size: 60px;
-        margin-bottom: 20px;
-        color: var(--primary-color);
+.logo-circle {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 20px rgba(0,114,255,0.3);
+}
+
+    .logo-circle i {
+        font-size: 40px;
+        color: white;
     }
 
-/* Giao diện Chat (Ẩn mặc định) */
 .chat-interface {
     display: none;
     flex-direction: column;
@@ -180,6 +187,18 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(10px);
+}
+
+.back-btn {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--primary-color);
+    margin-right: 15px;
+    cursor: pointer;
 }
 
 .chat-header-user {
@@ -188,79 +207,107 @@ body {
 }
 
     .chat-header-user h3 {
-        margin-left: 10px;
         font-size: 17px;
+        font-weight: 600;
+        margin-bottom: 2px;
     }
 
-.header-actions button {
-    background: none;
-    border: none;
-    width: 40px;
-    height: 40px;
+    .chat-header-user p {
+        font-size: 12px;
+        color: var(--green-online);
+    }
+
+.btn-call-action {
+    width: 45px;
+    height: 45px;
     border-radius: 50%;
-    cursor: pointer;
+    background: #f0f8ff;
     color: var(--primary-color);
-    font-size: 20px;
-    margin-left: 5px;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
     transition: 0.2s;
+    margin-left: 5px;
 }
 
-    .header-actions button:hover {
-        background-color: #ebf5ff;
+    .btn-call-action:hover {
+        background: var(--primary-color);
+        color: white;
     }
 
 .messages-box {
     flex: 1;
     padding: 20px;
-    background: #fff;
+    background: #fafafa;
     overflow-y: auto;
 }
 
-.dummy-msg {
-    text-align: center;
-    color: #ccc;
-    margin-top: 50px;
-    font-style: italic;
+.message {
+    max-width: 70%;
+    padding: 10px 15px;
+    margin-bottom: 5px;
+    border-radius: 18px;
+    font-size: 14px;
+    width: fit-content;
+    word-wrap: break-word;
+}
+
+.my-message {
+    background: var(--primary-color);
+    color: white;
+    margin-left: auto;
+    border-bottom-right-radius: 4px;
+}
+
+.other-message {
+    background: #e4e6eb;
+    color: black;
+    margin-right: auto;
+    border-bottom-left-radius: 4px;
+}
+
+.msg-status {
+    font-size: 11px;
+    color: #65676b;
+    text-align: right;
+    margin-bottom: 10px;
+    display: block;
 }
 
 .input-area {
     padding: 15px;
     border-top: 1px solid var(--border-color);
     display: flex;
-    align-items: center;
+    gap: 10px;
+    background: #fff;
 }
 
     .input-area input {
         flex: 1;
-        padding: 10px 15px;
-        border-radius: 20px;
-        border: none;
-        background: #f0f2f5;
+        padding: 12px 20px;
+        border-radius: 25px;
+        border: 1px solid #ddd;
         outline: none;
-        margin-right: 10px;
     }
 
     .input-area button {
-        background: none;
         border: none;
+        background: none;
         color: var(--primary-color);
         font-size: 20px;
         cursor: pointer;
     }
 
-/* --- VIDEO CALL MODAL (Giao diện gọi) --- */
+/* --- GIAO DIỆN GỌI VIDEO CHUẨN ĐẸP (FIXED) --- */
 .call-modal {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.9);
-    z-index: 1000;
-    display: none; /* Ẩn mặc định */
+    inset: 0;
+    background: #121212;
+    z-index: 99999;
+    display: none;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    overflow: hidden;
+    touch-action: none;
 }
 
     .call-modal.active {
@@ -268,65 +315,203 @@ body {
     }
 
 .video-container {
-    position: relative;
-    width: 800px;
-    height: 600px;
-    background: #222;
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: black;
 }
-/* Video người khác (Lớn) */
+
 #remoteVideo {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain; /* Hoặc cover nếu muốn full màn hình bị cắt nhẹ */
 }
-/* Video của mình (Nhỏ, góc phải) */
+
 #localVideo {
     position: absolute;
-    bottom: 20px;
+    bottom: 120px;
     right: 20px;
-    width: 180px;
-    height: 135px;
-    background: #000;
-    border: 2px solid rgba(255,255,255,0.3);
-    border-radius: 10px;
+    width: 110px;
+    height: 150px;
+    background: #333;
+    border-radius: 12px;
     object-fit: cover;
+    border: 2px solid rgba(255,255,255,0.3);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    z-index: 10;
 }
 
-.call-controls {
-    margin-top: 20px;
+/* Thanh điều khiển (Căn giữa tuyệt đối) */
+.call-controls-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 90px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
     display: flex;
-    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    gap: 30px; /* Khoảng cách đều giữa các nút */
+    z-index: 20;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
 }
 
+/* Style Nút Tròn Đẹp */
 .control-btn {
     width: 60px;
     height: 60px;
     border-radius: 50%;
     border: none;
     font-size: 24px;
+    color: white;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: 0.3s;
-    color: white;
+    transition: transform 0.2s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
-.btn-hangup {
-    background-color: #ff3b30;
-}
-
-    .btn-hangup:hover {
-        background-color: #d63026;
+    .control-btn:active {
+        transform: scale(0.9);
     }
 
-.btn-mute {
-    background-color: #3a3a3c;
+.btn-hangup {
+    background-color: #ff443d;
+}
+/* Đỏ */
+.btn-toggle {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+    /* Trong suốt */
+    .btn-toggle:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-toggle.off {
+        background-color: #fff;
+        color: #000;
+    }
+/* Tắt thì sáng lên */
+.btn-share {
+    background-color: #2d8cf0;
+    display: none;
+}
+/* Ẩn trên mobile */
+@media (min-width: 768px) {
+    .btn-share {
+        display: flex;
+    }
 }
 
-.btn-camera {
-    background-color: #3a3a3c;
+@media screen and (max-width: 768px) {
+    body {
+        height: 100dvh;
+        width: 100vw;
+        overflow: hidden;
+        position: fixed;
+    }
+
+    .app-container {
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    /* Ẩn/Hiện Sidebar và Chat */
+    .sidebar {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        z-index: 10;
+    }
+
+    .chat-area {
+        display: none;
+        width: 100%;
+        height: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+        background: #fff;
+        z-index: 20;
+    }
+
+    .app-container.mobile-chat-active .sidebar {
+        display: none !important;
+    }
+
+    .app-container.mobile-chat-active .chat-area {
+        display: flex !important;
+        flex-direction: column;
+    }
+
+    /* Fix thanh chat (Quan trọng) */
+    .messages-box {
+        padding-bottom: 80px !important; /* Chừa chỗ cho input */
+        height: calc(100% - 60px); /* Trừ header */
+    }
+
+    .input-area {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 10px;
+        background: #fff;
+        z-index: 1000;
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+        border-top: 1px solid #eee;
+    }
+
+    /* Fix giao diện gọi video */
+    .video-container {
+        background: #000;
+    }
+
+    #localVideo {
+        bottom: 90px;
+        right: 10px;
+        width: 90px;
+        height: 120px;
+        border: 1px solid rgba(255,255,255,0.5);
+    }
+
+    /* Fix thanh nút điều khiển */
+    .call-controls-bar {
+        height: 70px;
+        gap: 15px;
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+        background: rgba(0,0,0,0.8);
+    }
+
+    /* Ẩn chữ trong nút, chỉ hiện Icon */
+    .control-btn {
+        width: 45px;
+        height: 45px;
+        padding: 0;
+        border-radius: 50%; /* Tròn vo */
+        justify-content: center;
+    }
+
+        .control-btn span {
+            display: none;
+        }
+    /* Ẩn chữ */
+    .btn-share {
+        display: none;
+    }
+    /* Ẩn nút share màn hình trên đt */
+
+    .back-btn {
+        display: block;
+        margin-right: 10px;
+    }
 }
