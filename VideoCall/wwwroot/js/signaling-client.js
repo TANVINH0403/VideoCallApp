@@ -1,33 +1,30 @@
-﻿
-let connection = null;
+﻿let connection = null;
 let localStream = null;
 let remoteStream = null;
 let peerConnection = null;
 let currentTargetConnectionId = null;
+let currentTargetName = null;
 
+// DOM Elements cho giao diện mới
+const friendListEl = document.getElementById("friendList");
+const welcomeScreen = document.getElementById("welcomeScreen");
+const chatInterface = document.getElementById("chatInterface");
+const chatNameEl = document.getElementById("chatName");
+const chatAvatarEl = document.getElementById("chatAvatar");
+const btnStartVideoCall = document.getElementById("btnStartVideoCall");
+
+// DOM Elements cho Modal Gọi
+const callModal = document.getElementById("callModal");
 const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
 const hangupBtn = document.getElementById("hangupBtn");
-const friendList = document.getElementById("friendList");
-const statusEL = document.getElementById("status");
 
+// Cấu hình ICE Servers
 const iceServers = {
     iceServers: [
-        {
-            urls: "stun:stun.relay.metered.ca:80",
-        },
+        { urls: "stun:stun.relay.metered.ca:80" },
         {
             urls: "turn:global.relay.metered.ca:80",
-            username: "b0f9e65ea7bd51cba7566fd5",
-            credential: "gA9dO40qYeKAZxAU",
-        },
-        {
-            urls: "turn:global.relay.metered.ca:80?transport=tcp",
-            username: "b0f9e65ea7bd51cba7566fd5",
-            credential: "gA9dO40qYeKAZxAU",
-        },
-        {
-            urls: "turn:global.relay.metered.ca:443",
             username: "b0f9e65ea7bd51cba7566fd5",
             credential: "gA9dO40qYeKAZxAU",
         },
@@ -41,7 +38,10 @@ const iceServers = {
 
 async function startSignalR() {
     const token = localStorage.getItem("authToken");
-    if (!token) return;
+    if (!token) {
+        window.location.href = "/login.html";
+        return;
+    }
 
     connection = new signalR.HubConnectionBuilder()
         .withUrl(`/hubs?token=${token}`)
@@ -49,56 +49,62 @@ async function startSignalR() {
         .build();
 
     // --- XỬ LÝ SỰ KIỆN SIGNALR ---
-
     connection.on("LoadFriends", renderFriends);
 
     connection.on("FriendOnline", (connectionId, name) => {
-        const newFriend = {
-            id: null, 
-            name: name,
-            isOnline: true,
-            connectionId: connectionId 
-        };
-
-        addFriendToList(newFriend);
         console.log(`${name} đã online.`);
+        // Tải lại trang để cập nhật danh sách (đơn giản hóa)
+        location.reload();
     });
-    // Xử lý cuộc gọi đến (Tham số: callerConnectionId, callerName)
+
+    connection.on("FriendOffline", (userId) => {
+        console.log(`User ${userId} đã offline.`);
+        location.reload();
+    });
+
+    // Xử lý cuộc gọi đến
     connection.on("IncomingCall", async (callerConnectionId, callerName) => {
         if (peerConnection) {
+            // Đang bận thì từ chối
             await connection.invoke("RejectCall", callerConnectionId);
             return;
         }
 
-        if (confirm(`Có cuộc gọi từ ${callerName}. Nhận không?`)) {
+        // Hiển thị thông báo xác nhận
+        const accept = confirm(`📞 ${callerName} đang gọi video cho bạn!\nChấp nhận?`);
+        if (accept) {
             currentTargetConnectionId = callerConnectionId;
+            currentTargetName = callerName;
 
-            // 1. Thông báo cho người gọi biết cuộc gọi đã được chấp nhận
+            // Mở Modal Gọi
+            showCallModal();
+
+            // 1. Báo cho người gọi biết mình đã nhận
             await connection.invoke("AcceptCall", callerConnectionId);
 
-            // 2. Khởi tạo PeerConnection (là người nhận, isCaller = false)
+            // 2. Khởi tạo WebRTC (Người nhận: isCaller = false)
             await startCall(callerConnectionId, false);
         } else {
-            // 3. Gửi tín hiệu từ chối
             await connection.invoke("RejectCall", callerConnectionId);
         }
     });
 
     connection.on("CallAccepted", async () => {
-        // A biết rằng B đã sẵn sàng. A mới bắt đầu khởi tạo WebRTC và tạo Offer.
-        // LƯU Ý: A là người gọi, nên isCaller = true.
+        console.log("Đối phương đã nhận cuộc gọi!");
+        // Người gọi: isCaller = true
         await startCall(currentTargetConnectionId, true);
+    });
+
+    connection.on("CallRejected", () => {
+        alert("Người dùng bận hoặc từ chối cuộc gọi.");
+        hideCallModal();
     });
 
     connection.on("ReceiveOffer", async (callerId, sdp) => {
         if (!peerConnection) return;
-
         await peerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: sdp }));
-
         const answer = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answer);
-
-        // Gửi Answer về người gọi (callerId)
         await connection.invoke("SendAnswer", callerId, answer.sdp);
     });
 
@@ -118,50 +124,96 @@ async function startSignalR() {
 
     try {
         await connection.start();
-        statusEL.textContent = "Đã kết nối!";
-        statusEL.className = "status";
+        console.log("SignalR Connected!");
     } catch (err) {
-        statusEL.textContent = "Lỗi kết nối SignalR!";
-        statusEL.className = "status offline";
         console.error(err);
     }
 }
 
-// === RENDER DANH SÁCH BẠN ===
+// === UI LOGIC: RENDER DANH SÁCH BẠN ===
 function renderFriends(friends) {
-    friendList.innerHTML = "";
-    if (friends.length === 0) {
+    friendListEl.innerHTML = "";
+
+    if (!friends || friends.length === 0) {
+        friendListEl.innerHTML = "<li style='text-align:center; color:#999; margin-top:20px'>Chưa có bạn bè online</li>";
         return;
     }
 
     friends.forEach((f) => {
         const li = document.createElement("li");
-        const nameSpan = document.createElement("span");
-        nameSpan.innerHTML = `<strong>${f.name}</strong>`;
-        const btnCall = document.createElement("button");
-        btnCall.textContent = "Gọi";
-        btnCall.addEventListener("click", () => callUser(f.connectionId, f.name));
+        li.className = "friend-item";
 
-        li.appendChild(nameSpan);
-        li.appendChild(btnCall);
-        friendList.appendChild(li);
+        // Lấy chữ cái đầu của tên làm Avatar
+        const avatarLetter = f.name ? f.name.charAt(0).toUpperCase() : "?";
+
+        li.innerHTML = `
+            <div class="avatar-wrapper">
+                <div class="avatar">${avatarLetter}</div>
+                <div class="status-dot ${f.isOnline ? 'online' : ''}"></div>
+            </div>
+            <div class="friend-info">
+                <h4>${f.name}</h4>
+                <p>${f.isOnline ? 'Đang hoạt động' : 'Offline'}</p>
+            </div>
+        `;
+
+        li.addEventListener("click", () => {
+            selectFriend(f);
+            // Highlight item được chọn
+            document.querySelectorAll('.friend-item').forEach(item => item.classList.remove('active'));
+            li.classList.add('active');
+        });
+
+        friendListEl.appendChild(li);
     });
 }
 
-// === KHỞI TẠO CUỘC GỌI ===
-async function callUser(targetConnectionId, targetName) {
-    currentTargetConnectionId = targetConnectionId;
+// === CHỌN NGƯỜI ĐỂ CHAT/GỌI ===
+function selectFriend(friend) {
+    currentTargetConnectionId = friend.connectionId;
+    currentTargetName = friend.name;
 
-    // 1. Gửi yêu cầu gọi lên Server (CallFriend)
-    await connection.invoke("CallFriend", targetConnectionId);
+    // Ẩn màn hình chào, hiện giao diện chat
+    welcomeScreen.style.display = "none";
+    chatInterface.classList.add("active");
 
-    // 2. Khởi tạo PeerConnection (là người gọi, isCaller = true)
-    //await startCall(targetConnectionId, true);
+    // Hiện flex để đảm bảo layout đúng
+    chatInterface.style.display = "flex";
+
+    // Cập nhật thông tin Header
+    chatNameEl.textContent = friend.name;
+    chatAvatarEl.textContent = friend.name.charAt(0).toUpperCase();
+
+    // Gán sự kiện cho nút Gọi Video
+    // Lưu ý: Xóa sự kiện cũ trước khi gán mới để tránh gọi nhiều lần (đơn giản hóa bằng cách gán onclick)
+    btnStartVideoCall.onclick = () => initiateCall(friend.connectionId, friend.name);
 }
 
-// === WEB RTC CORE LOGIC ===
+// === BẮT ĐẦU CUỘC GỌI (Người gọi bấm nút) ===
+async function initiateCall(targetId, targetName) {
+    if (!targetId) {
+        alert("Người dùng này hiện không online.");
+        return;
+    }
+
+    showCallModal(); // Hiện giao diện gọi ngay lập tức
+    console.log(`Đang gọi cho ${targetName}...`);
+
+    // Gửi tín hiệu gọi
+    await connection.invoke("CallFriend", targetId);
+}
+
+// === WEBRTC CORE ===
 async function startCall(targetConnectionId, isCaller) {
-    await getLocalStream();
+    try {
+        await getLocalStream();
+    } catch (err) {
+        console.error("Không lấy được Camera/Mic:", err);
+        alert("Lỗi: Không truy cập được Camera/Mic. Kiểm tra quyền truy cập.");
+        hideCallModal();
+        return;
+    }
+
     peerConnection = new RTCPeerConnection(iceServers);
 
     localStream.getTracks().forEach((track) => {
@@ -173,56 +225,32 @@ async function startCall(targetConnectionId, isCaller) {
         remoteVideo.srcObject = remoteStream;
     };
 
-    peerConnection.oniceconnectionstatechange = (event) => {
-        console.log(`ICE Connection State: ${peerConnection.iceConnectionState}`);
-    }
-    // 1. Gửi ICE Candidate
     peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
-            // Gửi ICE Candidate bằng hàm SendIce
-            connection.invoke(
-                "SendIce",
-                targetConnectionId, // targetId
-                event.candidate     // candidate object
-            );
+            connection.invoke("SendIce", targetConnectionId, event.candidate);
         }
     };
 
-    // 2. Gửi Offer
     if (isCaller) {
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(offer);
-
-        // Gửi Offer bằng hàm SendOffer 
-        await connection.invoke(
-            "SendOffer",
-            targetConnectionId, // targetId
-            offer.sdp           // sdp string
-        );
+        await connection.invoke("SendOffer", targetConnectionId, offer.sdp);
     }
-
-    hangupBtn.disabled = false;
-    hangupBtn.onclick = hangUp;
 }
 
-function addFriendToList(f) {
-    if (!f.connectionId) return; 
-
-    const li = document.createElement("li");
-    const nameSpan = document.createElement("span");
-    nameSpan.innerHTML = `<strong>${f.name}</strong>`;
-
-    const btnCall = document.createElement("button");
-    btnCall.textContent = "Gọi";
-    btnCall.addEventListener("click", () => callUser(f.connectionId, f.name));
-
-    li.appendChild(nameSpan);
-    li.appendChild(btnCall);
-    friendList.appendChild(li); 
+// === QUẢN LÝ MODAL & STREAM ===
+function showCallModal() {
+    callModal.classList.add("active");
+    callModal.style.display = "flex"; // Đảm bảo hiện flex
 }
 
-// === CÁC HÀM KHÁC (HangUp, GetLocalStream) ===
-function hangUp() {
+function hideCallModal() {
+    callModal.classList.remove("active");
+    callModal.style.display = "none";
+    hangUpLogic();
+}
+
+function hangUpLogic() {
     if (peerConnection) {
         peerConnection.close();
         peerConnection = null;
@@ -233,31 +261,25 @@ function hangUp() {
     }
     remoteVideo.srcObject = null;
     localVideo.srcObject = null;
-    hangupBtn.disabled = true;
-    currentTargetConnectionId = null;
-    getLocalStream();
 }
 
-
 async function getLocalStream() {
-    if (localStream) return;
-    try {
-        localStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true,
-        });
-        localVideo.srcObject = localStream;
-    } catch (err) {
-        alert("Không thể truy cập camera/mic: " + err.message);
-        localStream = await navigator.mediaDevices.getUserMedia({
-            video: false,
-            audio: true,
-        });
-        localVideo.srcObject = localStream;
-    }
+    localStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+    });
+    localVideo.srcObject = localStream;
+}
+
+// Nút Ngắt máy
+if (hangupBtn) {
+    hangupBtn.addEventListener("click", () => {
+        // Tắt phía mình
+        hideCallModal();
+        // Có thể gửi thêm sự kiện báo đối phương tắt
+    });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     startSignalR();
-    hangupBtn.disabled = true;
 });
