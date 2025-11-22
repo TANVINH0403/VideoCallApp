@@ -1,5 +1,4 @@
-﻿// Controllers/AuthController.cs
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Text;
 using VideoCall.Application.Interfaces;
 using VideoCall.Domain.Entities;
@@ -14,7 +13,14 @@ namespace VideoCall.Controller
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
             var user = await userService.LoginAsync(model.Name, model.Password);
+
             if (user == null) return Unauthorized("Sai tên hoặc mật khẩu");
+
+            if (user.IsOnline)
+            {
+                // Trả về lỗi 409 Conflict, thông báo tài khoản đang được sử dụng
+                return Conflict("Tài khoản này đang được sử dụng bởi một thiết bị khác.");
+            }
 
             var token = Convert.ToBase64String(Encoding.UTF8.GetBytes(user.Id));
             return Ok(new { token, name = user.Name });

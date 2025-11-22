@@ -1,5 +1,4 @@
-﻿// Domain/Entities/User.cs
-namespace VideoCall.Domain.Entities
+﻿namespace VideoCall.Domain.Entities
 {
     public class User
     {

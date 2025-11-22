@@ -1,4 +1,6 @@
-// Program.cs
+﻿// Program.cs
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using VideoCall.Application.Interfaces;
 using VideoCall.Application.Services;
 using VideoCall.Domain.Entities;
@@ -6,7 +8,6 @@ using VideoCall.Infrastructure.Data;
 using VideoCall.Infrastructure.SignalR;
 var builder = WebApplication.CreateBuilder(args);
 
-// === DI ===
 builder.Services.AddSingleton<IRepository<User>>(sp =>
 {
     var users = new List<User>
@@ -19,11 +20,10 @@ builder.Services.AddSingleton<IRepository<User>>(sp =>
     return new InMemoryRepository<User>(users);
 });
 
-builder.Services.AddSingleton<IRepository<Friendship>>(sp =>
-    new InMemoryRepository<Friendship>(new List<Friendship>()));
+
+
 
 builder.Services.AddSingleton<IUserService, UserService>();
-builder.Services.AddScoped<IFriendshipService, FriendshipService>();
 
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
@@ -47,6 +47,9 @@ app.UseDefaultFiles(new DefaultFilesOptions
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowAll");
+app.UseAuthentication();
+
+app.UseAuthorization();
 
 
 app.MapControllers();
