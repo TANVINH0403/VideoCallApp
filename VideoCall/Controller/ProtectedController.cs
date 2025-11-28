@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace VideoCall.Controller
 {
-    [Authorize] // Bảo vệ toàn bộ Controller này
+    [Authorize] 
     [ApiController]
     [Route("api/[controller]")]
     public class ProtectedController : ControllerBase
@@ -11,7 +11,6 @@ namespace VideoCall.Controller
         [HttpGet]
         public IActionResult GetData()
         {
-            // Chỉ người dùng đã đăng nhập mới truy cập được đây
             return Ok($"Dữ liệu bí mật cho {User.Identity.Name}");
         }
     }

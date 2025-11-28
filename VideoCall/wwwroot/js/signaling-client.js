@@ -100,7 +100,7 @@ async function startSignalR() {
     // --- CALL EVENTS ---
     connection.on("IncomingCall", async (callerConnectionId, callerName) => {
         if (peerConnection) { await connection.invoke("RejectCall", callerConnectionId); return; }
-        const accept = confirm(` ${callerName} đang gọi...\nChấp nhận?`);
+        const accept = confirm(`${callerName} đang gọi...\nChấp nhận?`);
         if (accept) {
             currentTargetConnectionId = callerConnectionId;
             showCallModal();

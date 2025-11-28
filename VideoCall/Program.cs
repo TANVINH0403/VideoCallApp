@@ -1,5 +1,4 @@
-﻿// Program.cs
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using VideoCall.Application.Interfaces;
 using VideoCall.Application.Services;
@@ -8,7 +7,7 @@ using VideoCall.Infrastructure.Data;
 using VideoCall.Infrastructure.SignalR;
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSingleton<IRepository<User>>(sp =>
+builder.Services.AddSingleton<IInMemoryRepository<User>>(sp =>
 {
     var users = new List<User>
     {
@@ -55,4 +54,4 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<VideoCallHub>("/hubs");
 app.MapFallbackToFile("index.html");
-app.Run();
+await app.RunAsync();

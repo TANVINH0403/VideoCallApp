@@ -1,6 +1,6 @@
 ﻿namespace VideoCall.Application.Interfaces
 {
-    public interface IRepository<T>
+    public interface IInMemoryRepository<out T>
     {
          IReadOnlyList<T> GetAll();
     }

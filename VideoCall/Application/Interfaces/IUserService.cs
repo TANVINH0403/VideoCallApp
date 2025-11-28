@@ -8,7 +8,6 @@ namespace VideoCall.Application.Interfaces
         Task SetOnlineAsync(string userId, string connectionId);
         Task<User?> SetOfflineAsync(string connectionId);
         Task<List<User>> GetAllUsersWithStatusAsync(string currentUserId);
-        Task<List<User>> GetOnlineFriendsAsync(string currentUserId);
         User? GetByConnectionId(string connectionId);
         User? GetOnlineUserById(string userId);
         IReadOnlyList<User> GetAllUsers();

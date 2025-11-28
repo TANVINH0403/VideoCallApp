@@ -9,8 +9,7 @@ namespace VideoCall.Infrastructure.SignalR
     {
         private readonly IUserService _userService;
 
-        // KHO LƯU TRỮ TIN NHẮN TẠM THỜI (Lưu trong RAM)
-        private static List<Message> _messageStore = new();
+        private static List<Message> _messageStore = [];
 
         public VideoCallHub(IUserService userService)
         {
@@ -20,36 +19,31 @@ namespace VideoCall.Infrastructure.SignalR
         public override async Task OnConnectedAsync()
         {
             var token = Context.GetHttpContext()?.Request.Query["token"].FirstOrDefault();
-            if (string.IsNullOrEmpty(token)) { Context.Abort(); return; }
+            if (string.IsNullOrEmpty(token)) { Context.Abort(); return; } 
 
             var userIdString = Encoding.UTF8.GetString(Convert.FromBase64String(token));
 
-            // Set Online
             await _userService.SetOnlineAsync(userIdString, Context.ConnectionId);
 
-            // Lấy danh sách TẤT CẢ user (kể cả offline)
             var allUsers = await _userService.GetAllUsersWithStatusAsync(userIdString);
 
-            // Gửi danh sách về cho người vừa login
             await Clients.Caller.SendAsync("LoadFriends",
                 allUsers.Select(f => new { f.Id, f.Name, f.IsOnline, f.ConnectionId }));
 
-            // Báo cho người khác biết mình vừa Online
-            var me = _userService.GetAllUsers().FirstOrDefault(u => u.Id == userIdString);
-            await Clients.Others.SendAsync("UserStatusChanged", userIdString, true, Context.ConnectionId); // true = Online
+            var user = _userService.GetAllUsers().FirstOrDefault(u => u.Id == userIdString);
+            await Clients.Others.SendAsync("UserStatusChanged", userIdString, true, Context.ConnectionId);
 
             await base.OnConnectedAsync();
         }
 
-        public override async Task OnDisconnectedAsync(Exception? ex)
+        public override async Task OnDisconnectedAsync(Exception? exception)
         {
             var user = await _userService.SetOfflineAsync(Context.ConnectionId);
             if (user != null)
             {
-                // Báo cho mọi người biết mình Offline
-                await Clients.Others.SendAsync("UserStatusChanged", user.Id, false, null); // false = Offline
+                await Clients.Others.SendAsync("UserStatusChanged", user.Id, false, null);
             }
-            await base.OnDisconnectedAsync(ex);
+            await base.OnDisconnectedAsync(exception);
         }
 
         // --- CHỨC NĂNG CHAT ---
@@ -86,24 +80,36 @@ namespace VideoCall.Infrastructure.SignalR
             await Clients.Caller.SendAsync("LoadChatHistory", history);
         }
 
+
+        //Bắt đầu cuộc gọi
         public async Task CallFriend(string targetId)
         {
             var caller = _userService.GetByConnectionId(Context.ConnectionId);
-            // Kiểm tra targetId có phải là ConnectionId (User Online) hay UserId (User Offline)
-            // Logic cũ của bạn dùng ConnectionId. Nếu User Offline thì không gọi được.
+
             if (string.IsNullOrEmpty(targetId)) return;
 
-            await Clients.Client(targetId).SendAsync("IncomingCall", Context.ConnectionId, caller?.Name);
+            await Clients.Client(targetId).SendAsync("IncomingCall  ", Context.ConnectionId, caller?.Name);
         }
+
+        //Kết thúc cuộc gọi 
         public async Task EndCall(string targetId)
         {
-            // Báo cho đối phương biết cuộc gọi đã kết thúc
             await Clients.Client(targetId).SendAsync("CallEnded");
         }
+
+        //Chấp nhận cuộc gọi
         public async Task AcceptCall(string callerId) => await Clients.Client(callerId).SendAsync("CallAccepted", Context.ConnectionId);
+
+        //Từ chối cuộc gọi
         public async Task RejectCall(string callerId) => await Clients.Client(callerId).SendAsync("CallRejected");
+
+        //Gửi đề nghị kết nối
         public async Task SendOffer(string targetId, string sdp) => await Clients.Client(targetId).SendAsync("ReceiveOffer", Context.ConnectionId, sdp);
+
+        //gửi phản hồi kết nối 
         public async Task SendAnswer(string targetId, string sdp) => await Clients.Client(targetId).SendAsync("ReceiveAnswer", sdp);
+
+        //Gửi thông tin địa chỉ mạng
         public async Task SendIce(string targetId, object candidate) => await Clients.Client(targetId).SendAsync("ReceiveIce", candidate);
     }
 }

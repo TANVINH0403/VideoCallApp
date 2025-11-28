@@ -18,7 +18,6 @@ namespace VideoCall.Controller
 
             if (user.IsOnline)
             {
-                // Trả về lỗi 409 Conflict, thông báo tài khoản đang được sử dụng
                 return Conflict("Tài khoản này đang được sử dụng bởi một thiết bị khác.");
             }
 
