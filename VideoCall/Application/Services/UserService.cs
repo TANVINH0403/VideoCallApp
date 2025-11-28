@@ -6,6 +6,7 @@ namespace VideoCall.Application.Services
     public class UserService : IUserService
     {
         private readonly IRepository<User> userRepo;
+        // Dictionary chỉ dùng để map ConnectionId <-> User khi Online
         private readonly Dictionary<string, User> _onlineUsers = new();
 
         public UserService(IRepository<User> userRepo)
@@ -32,7 +33,7 @@ namespace VideoCall.Application.Services
             if (user == null) return Task.CompletedTask;
 
             user.SetOnline(connectionId);
-            _onlineUsers[connectionId] = user; 
+            _onlineUsers[connectionId] = user; // Lưu vào bộ nhớ tạm online
             return Task.CompletedTask;
         }
 
@@ -47,15 +48,15 @@ namespace VideoCall.Application.Services
             return Task.FromResult<User?>(null);
         }
 
-        // Lấy tất cả User và trạng thái online/offline(trừ bản thân)
+        // --- LẤY TẤT CẢ USER + TRẠNG THÁI ---
         public Task<List<User>> GetAllUsersWithStatusAsync(string currentUserId)
         {
             var allUsers = userRepo.GetAll()
-                .Where(u => u.Id != currentUserId) 
+                .Where(u => u.Id != currentUserId) // Trừ bản thân mình ra
                 .Select(u => {
-
+                    // Kiểm tra xem user này có đang trong Dictionary online không
                     var isOnline = _onlineUsers.Values.Any(onlineU => onlineU.Id == u.Id);
-
+                    // Nếu online, cập nhật ConnectionId mới nhất
                     if (isOnline)
                     {
                         var onlineUser = _onlineUsers.Values.First(ou => ou.Id == u.Id);
@@ -72,16 +73,10 @@ namespace VideoCall.Application.Services
             return Task.FromResult(allUsers);
         }
 
-        //Lấy danh sách bạn bè đang online
+        // Các hàm cũ giữ nguyên hoặc không dùng tới, nhưng để interface không lỗi ta cứ để đó
         public Task<List<User>> GetOnlineFriendsAsync(string currentUserId) => Task.FromResult(new List<User>());
-
-        // Tìm user đang online theo connectionId của SignalR    
         public User? GetByConnectionId(string connectionId) => _onlineUsers.GetValueOrDefault(connectionId);
-
-        // Tìm user đang online theo userId
         public User? GetOnlineUserById(string userId) => _onlineUsers.Values.FirstOrDefault(u => u.Id == userId);
-
-        // Lấy toàn bộ user từ DB
         public IReadOnlyList<User> GetAllUsers() => userRepo.GetAll();
     }
 }
