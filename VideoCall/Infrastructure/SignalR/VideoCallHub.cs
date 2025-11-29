@@ -9,7 +9,6 @@ namespace VideoCall.Infrastructure.SignalR
     {
         private readonly IUserService _userService;
 
-        // KHO LƯU TRỮ TIN NHẮN TẠM THỜI (Lưu trong RAM)
         public static List<Message> _messageStore = new List<Message>();
 
         public VideoCallHub(IUserService userService)
@@ -58,17 +57,13 @@ namespace VideoCall.Infrastructure.SignalR
             var sender = _userService.GetByConnectionId(Context.ConnectionId);
             if (sender == null) return;
 
-            // 1. Lưu tin nhắn vào kho
             var msg = new Message { SenderId = sender.Id, ReceiverId = targetId, Content = content };
             _messageStore.Add(msg);
 
-            // 2. Tìm xem người nhận có online không
             var targetUser = _userService.GetOnlineUserById(targetId);
 
-            // Gửi lại cho chính mình (để hiện lên giao diện)
             await Clients.Caller.SendAsync("ReceiveMessage", sender.Id, content);
 
-            // Nếu người nhận Online, gửi ngay lập tức
             if (targetUser != null && targetUser.ConnectionId != null)
             {
                 await Clients.Client(targetUser.ConnectionId).SendAsync("ReceiveMessage", sender.Id, content);
@@ -79,8 +74,7 @@ namespace VideoCall.Infrastructure.SignalR
         {
             var sender = _userService.GetByConnectionId(Context.ConnectionId);
             if (sender == null) return;
-
-            // Lấy tin nhắn giữa 2 người (sender và target)
+            
             var history = _messageStore
                 .Where(m => (m.SenderId == sender.Id && m.ReceiverId == targetId) ||
                             (m.SenderId == targetId && m.ReceiverId == sender.Id))
@@ -94,8 +88,6 @@ namespace VideoCall.Infrastructure.SignalR
         public async Task CallFriend(string targetId)
         {
             var caller = _userService.GetByConnectionId(Context.ConnectionId);
-            // Kiểm tra targetId có phải là ConnectionId (User Online) hay UserId (User Offline)
-            // Logic cũ của bạn dùng ConnectionId. Nếu User Offline thì không gọi được.
             if (string.IsNullOrEmpty(targetId)) return;
 
             await Clients.Client(targetId).SendAsync("IncomingCall", Context.ConnectionId, caller?.Name);
