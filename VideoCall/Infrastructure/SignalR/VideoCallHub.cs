@@ -85,6 +85,8 @@ namespace VideoCall.Infrastructure.SignalR
             await Clients.Caller.SendAsync("LoadChatHistory", history);
         }
 
+
+        //Bắt đầu cuộc gọi
         public async Task CallFriend(string targetId)
         {
             var caller = _userService.GetByConnectionId(Context.ConnectionId);
@@ -92,15 +94,23 @@ namespace VideoCall.Infrastructure.SignalR
 
             await Clients.Client(targetId).SendAsync("IncomingCall", Context.ConnectionId, caller?.Name);
         }
+
+        //Kết thúc cuộc gọi 
         public async Task EndCall(string targetId)
         {
             // Báo cho đối phương biết cuộc gọi đã kết thúc
             await Clients.Client(targetId).SendAsync("CallEnded");
         }
+
+        //Chấp nhận cuộc gọi
         public async Task AcceptCall(string callerId) => await Clients.Client(callerId).SendAsync("CallAccepted", Context.ConnectionId);
+        //Từ chối cuộc gọi
         public async Task RejectCall(string callerId) => await Clients.Client(callerId).SendAsync("CallRejected");
+        //Gửi offer
         public async Task SendOffer(string targetId, string sdp) => await Clients.Client(targetId).SendAsync("ReceiveOffer", Context.ConnectionId, sdp);
+        //Phản hồi offer
         public async Task SendAnswer(string targetId, string sdp) => await Clients.Client(targetId).SendAsync("ReceiveAnswer", sdp);
+        //Gửi thông tin địa chỉ mạng
         public async Task SendIce(string targetId, object candidate) => await Clients.Client(targetId).SendAsync("ReceiveIce", candidate);
     }
 }
