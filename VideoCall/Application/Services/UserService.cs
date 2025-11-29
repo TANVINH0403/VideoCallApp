@@ -14,6 +14,7 @@ namespace VideoCall.Application.Services
             this.userRepo = userRepo;
         }
 
+        // Đăng nhập người dùng
         public Task<User?> LoginAsync(string name, string password)
         {
             var user = this.userRepo.GetAll().FirstOrDefault(u => u.Name == name);
@@ -24,6 +25,7 @@ namespace VideoCall.Application.Services
             );
         }
 
+        // Đánh dấu User online và lưu connectionId
         public Task SetOnlineAsync(string userId, string connectionId)
         {
             var user = userRepo.GetAll().FirstOrDefault(u => u.Id == userId);
@@ -44,15 +46,13 @@ namespace VideoCall.Application.Services
             return Task.FromResult<User?>(null);
         }
 
-        // --- LẤY TẤT CẢ USER + TRẠNG THÁI ---
+         // Lấy tất cả User và trạng thái online/offline(trừ bản thân)
         public Task<List<User>> GetAllUsersWithStatusAsync(string currentUserId)
         {
             var allUsers = userRepo.GetAll()
-                .Where(u => u.Id != currentUserId) // Trừ bản thân mình ra
+                .Where(u => u.Id != currentUserId) 
                 .Select(u => {
-                    // Kiểm tra xem user này có đang trong Dictionary online không
                     var isOnline = _onlineUsers.Values.Any(onlineU => onlineU.Id == u.Id);
-                    // Nếu online, cập nhật ConnectionId mới nhất
                     if (isOnline)
                     {
                         var onlineUser = _onlineUsers.Values.First(ou => ou.Id == u.Id);
