@@ -28,7 +28,6 @@ namespace VideoCall.Controller
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             {
-                // Xác thực thất bại
                 return Unauthorized(new { message = "Tên đăng nhập hoặc mật khẩu không đúng." });
             }
 
@@ -41,8 +40,7 @@ namespace VideoCall.Controller
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
-
-            // Ghi cookie xác thực
+            
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
 
             // 3. TRẢ VỀ THÀNH CÔNG
@@ -51,7 +49,6 @@ namespace VideoCall.Controller
             return Ok(new { message = "Đăng nhập thành công" });
         }
 
-        // Thêm API đăng xuất
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
