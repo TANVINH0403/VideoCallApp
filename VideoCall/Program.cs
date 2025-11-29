@@ -1,4 +1,3 @@
-// Program.cs
 using VideoCall.Application.Interfaces;
 using VideoCall.Application.Services;
 using VideoCall.Domain.Entities;
@@ -6,7 +5,6 @@ using VideoCall.Infrastructure.Data;
 using VideoCall.Infrastructure.SignalR;
 var builder = WebApplication.CreateBuilder(args);
 
-// === DI ===
 builder.Services.AddSingleton<IRepository<User>>(sp =>
 {
     var users = new List<User>
