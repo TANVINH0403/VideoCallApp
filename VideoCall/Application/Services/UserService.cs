@@ -36,6 +36,7 @@ namespace VideoCall.Application.Services
             return Task.CompletedTask;
         }
 
+        // Xóa User khỏi danh sách online
         public Task<User?> SetOfflineAsync(string connectionId)
         {
             if (_onlineUsers.Remove(connectionId, out var user))
@@ -69,10 +70,13 @@ namespace VideoCall.Application.Services
             return Task.FromResult(allUsers);
         }
 
-        // Các hàm cũ giữ nguyên hoặc không dùng tới, nhưng để interface không lỗi ta cứ để đó
+ 
         public Task<List<User>> GetOnlineFriendsAsync(string currentUserId) => Task.FromResult(new List<User>());
+         // Tìm user đang online theo connectionId của SignalR    
         public User? GetByConnectionId(string connectionId) => _onlineUsers.GetValueOrDefault(connectionId);
+        // Tìm user đang online theo userId
         public User? GetOnlineUserById(string userId) => _onlineUsers.Values.FirstOrDefault(u => u.Id == userId);
+        // Lấy toàn bộ user từ DB
         public IReadOnlyList<User> GetAllUsers() => userRepo.GetAll();
     }
 }
