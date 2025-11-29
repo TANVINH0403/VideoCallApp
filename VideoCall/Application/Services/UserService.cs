@@ -6,7 +6,7 @@ namespace VideoCall.Application.Services
     public class UserService : IUserService
     {
         private readonly IRepository<User> userRepo;
-        // Dictionary chỉ dùng để map ConnectionId <-> User khi Online
+        // Dictionary chỉ dùng để map ConnectionId với User khi Online
         private readonly Dictionary<string, User> _onlineUsers = new();
 
         public UserService(IRepository<User> userRepo)
@@ -30,7 +30,7 @@ namespace VideoCall.Application.Services
             if (user == null) return Task.CompletedTask;
 
             user.SetOnline(connectionId);
-            _onlineUsers[connectionId] = user; // Lưu vào bộ nhớ tạm online
+            _onlineUsers[connectionId] = user; 
             return Task.CompletedTask;
         }
 
